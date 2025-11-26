@@ -66,8 +66,8 @@ class Config:
         self.SESSION3: str = getenv("STRING_SESSION3", "")  # Tertiary assistant (optional)
         
         # ============ SUPPORT LINKS ============
-        self.SUPPORT_CHANNEL: str = getenv("SUPPORT_CHANNEL", "https://t.me/TheInfinityAI")
-        self.SUPPORT_CHAT: str = getenv("SUPPORT_CHAT", "https://t.me/Hasindu_Lakshan")
+        self.SUPPORT_CHANNEL: str = getenv("SUPPORT_CHANNEL", "https://t.me/hasiimusic")
+        self.SUPPORT_CHAT: str = getenv("SUPPORT_CHAT", "https://t.me/lakzexe")
         
         # ============ EXCLUDED CHATS ============
         # Parse comma-separated chat IDs that assistants should never leave
