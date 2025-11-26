@@ -94,8 +94,8 @@ class TgCall(PyTgCalls):
                     import time as time_module
                     played = 0
                     duration = media.duration_sec
-                    # Build progress bar with same length as update_timer
-                    length = 20
+                    # Build progress bar with length=10 to match UI
+                    length = 10
                     pos = min(int((played / duration) * length), length - 1) if duration else 0
                     timer_bar = "—" * pos + "●" + "—" * (length - pos - 1)
                     played_time = time_module.strftime('%M:%S', time_module.gmtime(played))

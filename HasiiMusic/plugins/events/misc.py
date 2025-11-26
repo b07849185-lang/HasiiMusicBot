@@ -68,7 +68,7 @@ async def track_time():
             media.time += 1
 
 
-async def update_timer(length=20):
+async def update_timer(length=10):
     while True:
         await asyncio.sleep(7)
         for chat_id in db.active_calls:
