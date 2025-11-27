@@ -62,10 +62,6 @@ async def broadcast_message(_, message: types.Message) -> None:
     if not broadcast_text and not media_message:
         return await message.reply_text(message.lang["gcast_usage"])
     
-    # Validate: either text or media must be present
-    if not broadcast_text and not media_message:
-        return await message.reply_text(message.lang["gcast_usage"])
-    
     # Determine recipients based on flags
     groups, users = await _get_broadcast_recipients(flags)
     all_chats = groups + users
@@ -281,7 +277,7 @@ async def _send_broadcast(
 
             # If a media message was provided, send media directly (not forward)
             if media_message:
-                caption = text.strip() if text else (media_message.caption or "")
+                caption = text if text else (media_message.caption or "")
                 try:
                     if media_message.photo:
                         file_id = media_message.photo[-1].file_id
@@ -344,7 +340,7 @@ async def _send_broadcast(
             # Retry sending after waiting
             try:
                 if media_message:
-                    caption = text.strip() if text else (media_message.caption or "")
+                    caption = text if text else (media_message.caption or "")
                     if media_message.photo:
                         file_id = media_message.photo[-1].file_id
                         await app.send_photo(chat_id=chat_id, photo=file_id, caption=caption)
