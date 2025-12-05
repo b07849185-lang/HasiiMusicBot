@@ -80,8 +80,13 @@ class TgCall(PyTgCalls):
                 stream=stream,
                 config=types.GroupCallConfig(auto_start=False),
             )
-            if not seek_time:
+            # Initialize media.time based on seek position
+            if seek_time:
+                media.time = seek_time
+            else:
                 media.time = 1
+                
+            if not seek_time:
                 await db.add_call(chat_id)
                 text = _lang["play_media"].format(
                     media.url,

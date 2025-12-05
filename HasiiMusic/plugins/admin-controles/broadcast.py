@@ -291,7 +291,8 @@ async def _send_broadcast(
                 sent_message = None
                 try:
                     if media_message.photo:
-                        file_id = media_message.photo[-1].file_id
+                        # Photo is a list of PhotoSize objects, get the largest
+                        file_id = media_message.photo.file_id if hasattr(media_message.photo, 'file_id') else media_message.photo[-1].file_id
                         sent_message = await app.send_photo(chat_id=chat_id, photo=file_id, caption=caption)
                     elif getattr(media_message, 'video', None):
                         file_id = media_message.video.file_id
@@ -385,7 +386,8 @@ async def _send_broadcast(
                 if media_message:
                     caption = text if text else (media_message.caption or "")
                     if media_message.photo:
-                        file_id = media_message.photo[-1].file_id
+                        # Photo is a list of PhotoSize objects, get the largest
+                        file_id = media_message.photo.file_id if hasattr(media_message.photo, 'file_id') else media_message.photo[-1].file_id
                         retry_sent = await app.send_photo(chat_id=chat_id, photo=file_id, caption=caption)
                     elif getattr(media_message, 'video', None):
                         file_id = media_message.video.file_id
@@ -393,12 +395,18 @@ async def _send_broadcast(
                     elif getattr(media_message, 'audio', None):
                         file_id = media_message.audio.file_id
                         retry_sent = await app.send_audio(chat_id=chat_id, audio=file_id, caption=caption)
+                    elif getattr(media_message, 'voice', None):
+                        file_id = media_message.voice.file_id
+                        retry_sent = await app.send_voice(chat_id=chat_id, voice=file_id, caption=caption)
                     elif getattr(media_message, 'document', None):
                         file_id = media_message.document.file_id
                         retry_sent = await app.send_document(chat_id=chat_id, document=file_id, caption=caption)
                     elif getattr(media_message, 'animation', None):
                         file_id = media_message.animation.file_id
                         retry_sent = await app.send_animation(chat_id=chat_id, animation=file_id, caption=caption)
+                    elif getattr(media_message, 'sticker', None):
+                        file_id = media_message.sticker.file_id
+                        retry_sent = await app.send_sticker(chat_id=chat_id, sticker=file_id)
                     else:
                         retry_sent = await app.send_message(chat_id, text)
                 else:
