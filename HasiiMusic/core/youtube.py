@@ -169,7 +169,8 @@ class YouTube:
                 "quiet": True,
                 "no_warnings": True,
                 "cookiefile": cookie,
-                "format": "best[height<=?720][width<=?1280]" if video else "bestaudio[acodec=opus]/bestaudio",
+                # More flexible format selection for live streams
+                "format": "best[height<=720]/best" if video else "bestaudio/best",
             }
 
             def _extract_url():
