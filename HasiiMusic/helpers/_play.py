@@ -45,16 +45,6 @@ def checkUB(play):
         if url and not yt.valid(url):
             return await m.reply_text(m.lang["play_unsupported"])
 
-        play_mode = await db.get_play_mode(m.chat.id)
-        if play_mode or force:
-            adminlist = await db.get_admins(m.chat.id)
-            if (
-                m.from_user.id not in adminlist
-                and not await db.is_auth(m.chat.id, m.from_user.id)
-                and not m.from_user.id in app.sudoers
-            ):
-                return await m.reply_text(m.lang["play_admin"])
-
         # Check if bot is admin in the chat
         try:
             bot_member = await app.get_chat_member(m.chat.id, app.id)
@@ -81,6 +71,16 @@ def checkUB(play):
                 f"• Delete Messages\n\n"
                 f"Please promote me as admin with the required permissions.</blockquote>"
             )
+
+        play_mode = await db.get_play_mode(m.chat.id)
+        if play_mode or force:
+            adminlist = await db.get_admins(m.chat.id)
+            if (
+                m.from_user.id not in adminlist
+                and not await db.is_auth(m.chat.id, m.from_user.id)
+                and not m.from_user.id in app.sudoers
+            ):
+                return await m.reply_text(m.lang["play_admin"])
 
         if m.chat.id not in db.active_calls:
             client = await db.get_client(m.chat.id)
