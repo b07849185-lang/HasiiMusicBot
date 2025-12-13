@@ -85,7 +85,7 @@ async def broadcast_message(_, message: types.Message) -> None:
     
     # Perform the broadcast (supports text and media messages)
     success_groups, success_users, failed_chats = await _send_broadcast(
-        broadcast_text, groups, users, sent, media_message
+        broadcast_text, groups, users, sent, media_message, flags
     )
     
     # Reset broadcasting flag
@@ -229,6 +229,7 @@ async def _send_broadcast(
     users: List[int],
     status_message: types.Message,
     media_message: types.Message | None = None,
+    flags: List[str] = None,
 ) -> Tuple[int, int, str]:
     """
     Send broadcast message to all recipients.
@@ -245,11 +246,9 @@ async def _send_broadcast(
     """
     global broadcasting
     
-    # Get flags from the original message
-    flags = []
-    if hasattr(status_message, 'reply_to_message') and status_message.reply_to_message:
-        original_text = status_message.reply_to_message.text or ""
-        flags, _ = _parse_broadcast_command(original_text)
+    # Use provided flags or default to empty list
+    if flags is None:
+        flags = []
     
     success_groups = 0
     success_users = 0
