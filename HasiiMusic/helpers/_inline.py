@@ -187,8 +187,8 @@ class Inline:
         return self.ikm(
             [
                 [
-                    self.ikb(text="Copy Link", copy_text=link),
-                    self.ikb(text="Open in YouTube", url=link),
+                    self.ikb(text="ᴄᴏᴘʏ ʟɪɴᴋ", copy_text=link),
+                    self.ikb(text="ᴏᴘᴇɴ ɪɴ ʏᴏᴜᴛᴜʙᴇ", url=link),
                 ],
             ]
         )
