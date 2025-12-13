@@ -94,7 +94,7 @@
   "play_not_found": "<blockquote>ꜰᴀɪʟᴇᴅ ᴛᴏ ᴘʀᴏᴄᴇꜱꜱ ᴛʜᴇ ǫᴜᴇʀʏ.\nɪꜰ ᴛʜᴇ ɪꜱꜱᴜᴇ ᴘᴇʀꜱɪꜱᴛꜱ, ʀᴇᴘᴏʀᴛ ɪᴛ ᴛᴏ ᴛʜᴇ <a href={0}>ꜱᴜᴘᴘᴏʀᴛ ᴄʜᴀᴛ</a>.</blockquote>",
   "play_unsupported": "<blockquote>ꜱᴏʀʀʏ, ᴛʜɪꜱ ᴍᴇᴅɪᴀ ᴛʏᴘᴇ ɪꜱ ɴᴏᴛ ꜱᴜᴘᴘᴏʀᴛᴇᴅ.</blockquote>",
   "play_chat_invalid": "<blockquote>ᴛʜɪꜱ ʙᴏᴛ ᴄᴀɴ ᴏɴʟʏ ʙᴇ ᴜꜱᴇᴅ ɪɴ <b>ꜱᴜᴘᴇʀɢʀᴏᴜᴘꜱ</b>.\n\nᴛᴏ ᴄᴏɴᴠᴇʀᴛ ʏᴏᴜʀ ɢʀᴏᴜᴘ ᴛᴏ ᴀ ꜱᴜᴘᴇʀɢʀᴏᴜᴘ, ᴍᴀᴋᴇ ᴛʜᴇ ᴄʜᴀᴛ ʜɪꜱᴛᴏʀʏ <b>ᴠɪꜱɪʙʟᴇ</b> ᴏɴᴄᴇ.\n\nʟᴇᴀᴠɪɴɢ ᴛʜɪꜱ ᴄʜᴀᴛ...</blockquote>",
-  "play_user_invalid": "<blockquote>🔒 <b>ᴀɴᴏɴʏᴍᴏᴜꜱ ᴀᴅᴍɪɴ ᴅᴇᴛᴇᴄᴛᴇᴅ</b></blockquote>\n<blockquote>↩️ ʀᴇᴠᴇʀᴛ ʙᴀᴄᴋ ᴛᴏ ᴜꜱᴇʀ ᴀᴄᴄᴏᴜɴᴛ ᴛᴏ ᴜꜱᴇ ᴍᴇ.</blockquote>",
+  "play_user_invalid": "<blockquote>🔒 <b>ᴀɴᴏɴʏᴍᴏᴜꜱ ᴀᴅᴍɪɴ ᴅᴇᴛᴇᴄᴛᴇᴅ</b> ʀᴇᴠᴇʀᴛ ʙᴀᴄᴋ ᴛᴏ ᴜꜱᴇʀ ᴀᴄᴄᴏᴜɴᴛ ᴛᴏ ᴜꜱᴇ ᴍᴇ.</blockquote>",
   "playlist_fetch": "<blockquote>ꜰᴇᴛᴄʜɪɴɢ ᴛʜᴇ ᴘʟᴀʏʟɪꜱᴛ...\nᴘʟᴇᴀꜱᴇ ʜᴏʟᴅ ᴏɴ.</blockquote>",
   "playlist_error": "<blockquote>ꜱᴏᴍᴇᴛʜɪɴɢ ᴡᴇɴᴛ ᴡʀᴏɴɢ ᴡʜɪʟᴇ ꜰᴇᴛᴄʜɪɴɢ ᴛʜᴇ ᴘʟᴀʏʟɪꜱᴛ.</blockquote>",
   "playlist_queued": "<blockquote><u><b>ᴀᴅᴅᴇᴅ {0} ᴛʀᴀᴄᴋꜱ ꜰʀᴏᴍ ᴛʜᴇ ᴘʟᴀʏʟɪꜱᴛ ᴛᴏ ǫᴜᴇᴜᴇ:</b></u>\n\n</blockquote>",
