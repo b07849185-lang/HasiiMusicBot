@@ -20,7 +20,7 @@
   "dl_cancelling": "<blockquote>ʜᴀɴɢ ᴏɴ, ᴄᴀɴᴄᴇʟʟɪɴɢ ᴛʜᴇ ᴅᴏᴡɴʟᴏᴀᴅ ɴᴏᴡ!</blockquote>",
   "dl_active": "<blockquote>ᴀʟʀᴇᴀᴅʏ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜᴀᴛ ꜰɪʟᴇ. ᴍɪɴᴅ ᴡᴀɪᴛɪɴɢ?</blockquote>",
   "dl_limit": "<blockquote>ꜰᴀɪʟᴇᴅ ᴛᴏ ᴘʀᴏᴄᴇꜱꜱ ᴛʜᴇ ꜰɪʟᴇ. ᴛʜᴇ ᴍᴀxɪᴍᴜᴍ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪᴍɪᴛ ɪꜱ <b>200 ᴍʙ</b>.</blockquote>",
-  "dl_progress": "<blockquote><u><b>ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ꜰɪʟᴇ</b></u>\n\n<b>ᴘʀᴏɢʀᴇꜱꜱ:</b> {0} / {1} [{2:.1ꜰ}%]\n<b>ꜱᴘᴇᴇᴅ:</b> {3}/𝘀 | <b>ᴇᴛᴀ:</b> {4}</blockquote>",
+  "dl_progress": "<blockquote><u><b>ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ꜰɪʟᴇ</b></u>\n\n<b>ᴘʀᴏɢʀᴇꜱꜱ:</b> {0} / {1} [{2:.1f}%]\n<b>ꜱᴘᴇᴇᴅ:</b> {3}/𝘀 | <b>ᴇᴛᴀ:</b> {4}</blockquote>",
   "dl_not_found": "<blockquote>ᴅᴏᴡɴʟᴏᴀᴅ ᴀʟʀᴇᴀᴅʏ ᴄᴀɴᴄᴇʟʟᴇᴅ.</blockquote>",
   "error_no_audio": "<blockquote>ᴍᴏᴠɪɴɢ ᴛᴏ ᴛʜᴇ ɴᴇxᴛ ᴛʀᴀᴄᴋ...\n\nᴀᴜᴅɪᴏ ꜱᴏᴜʀᴄᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴛʜᴇ ꜰɪʟᴇ.</blockquote>",
   "error_no_call": "<blockquote><b>ɴᴏ ᴀᴄᴛɪᴠᴇ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ ꜰᴏᴜɴᴅ.</b>\n\nᴘʟᴇᴀꜱᴇ ꜱᴛᴀʀᴛ ᴏɴᴇ ᴀɴᴅ <b>ᴛʀʏ ᴀɢᴀɪɴ</b>.</blockquote>",
