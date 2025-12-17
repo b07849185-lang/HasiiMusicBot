@@ -7,7 +7,7 @@
 # - User extraction from messages (mentions, replies, user IDs)
 # - Duration conversion (mm:ss to seconds)
 # - Message text extraction
-# 
+#
 # These utilities keep code DRY (Don't Repeat Yourself) across plugins.
 # ==============================================================================
 

@@ -2,17 +2,17 @@
 # stats.py - Bot Statistics Command (Sudo Only)
 # ==============================================================================
 # This plugin shows comprehensive bot statistics and system information.
-# 
+#
 # Commands:
 # - /stats - Show detailed bot statistics
-# 
+#
 # Displays:
 # - Total users and groups using the bot
 # - System info (OS, Python version, Pyrogram version)
 # - Bot uptime
 # - Memory and CPU usage
 # - Number of loaded plugins
-# 
+#
 # Only sudo users can use this command.
 # ==============================================================================
 

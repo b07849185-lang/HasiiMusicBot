@@ -2,10 +2,10 @@
 # leave.py - Force Leave Command (Sudo Only)
 # ==============================================================================
 # This plugin allows sudo users to make the bot and assistant leave any chat.
-# 
+#
 # Commands:
 # - /leave - Make bot and assistant leave the current chat
-# 
+#
 # Only sudo users can use this command.
 # ==============================================================================
 
@@ -23,13 +23,13 @@ async def _leave(_, m: types.Message):
     """
     chat_id = m.chat.id
     chat_name = m.chat.title or "this chat"
-    
+
     # Send confirmation message
     sent = await m.reply_text(
         f"<blockquote><b>👋 Leaving Chat</b></blockquote>\n\n"
         f"<blockquote>Bot and assistant are leaving <b>{chat_name}</b>...</blockquote>"
     )
-    
+
     # Try to make assistant leave if it's in the chat
     try:
         client = await db.get_client(chat_id)
@@ -44,7 +44,7 @@ async def _leave(_, m: types.Message):
     except Exception:
         # If getting client fails, just continue with bot leaving
         pass
-    
+
     # Make bot leave the chat
     try:
         await app.leave_chat(chat_id)

@@ -61,23 +61,27 @@ COOKIE_URL=youtube_cookies_url (optional)
 ### Installation
 
 1. **Clone the repository**
+
 ```bash
 git clone https://github.com/hasindu-nagolla/HasiiMusicBot
 cd HasiiMusicBot
 ```
 
 2. **Install dependencies**
+
 ```bash
 pip install -r requirements.txt
 ```
 
 3. **Set up environment variables**
+
 ```bash
 cp sample.env .env
 # Edit .env with your values
 ```
 
 4. **Run the bot**
+
 ```bash
 bash start
 ```
@@ -87,6 +91,7 @@ bash start
 ## 📖 Commands
 
 ### User Commands
+
 - `/play` - Play a song (YouTube URL or search query)
 - `/radio` - Browse and play live radio stations
 - `/queue` - View current queue
@@ -95,6 +100,7 @@ bash start
 - `/lang` - Change language
 
 ### Admin Commands
+
 - `/pause` - Pause current stream
 - `/resume` - Resume paused stream
 - `/skip` - Skip current track
@@ -103,6 +109,7 @@ bash start
 - `/reload` - Reload admin cache
 
 ### Sudo Commands
+
 - `/stats` - View bot statistics
 - `/broadcast` - Broadcast message to all chats
 - `/addsudo` - Add sudo user
@@ -115,7 +122,9 @@ bash start
 ## 🛠 Configuration
 
 ### Audio Quality Settings
+
 The bot streams audio at **STUDIO** quality (highest available) with:
+
 - **Codec**: Opus (best quality for music)
 - **Format**: WebM container for audio downloads
 - **Sample Rate**: 48kHz
@@ -123,6 +132,7 @@ The bot streams audio at **STUDIO** quality (highest available) with:
 - **Optimization**: 16 concurrent downloads, 1MB chunks
 
 ### Customization
+
 - Modify language files in `HasiiMusic/locales/`
 - Customize thumbnails and images in `config.py`
 - Adjust queue limits and duration in `config.py`

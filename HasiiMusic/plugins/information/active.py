@@ -2,11 +2,11 @@
 # active.py - Active Voice Chats Command (Sudo Only)
 # ==============================================================================
 # This plugin shows statistics about active voice chats where the bot is playing.
-# 
+#
 # Commands:
 # - /ac - Show count of active voice chats
 # - /activevc - Show detailed list of active chats with currently playing track
-# 
+#
 # Only sudo users can use these commands.
 # ==============================================================================
 

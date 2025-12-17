@@ -85,7 +85,7 @@ class TgCall(PyTgCalls):
                 media.time = seek_time
             else:
                 media.time = 1
-                
+
             if not seek_time:
                 await db.add_call(chat_id)
                 text = _lang["play_media"].format(
@@ -101,10 +101,13 @@ class TgCall(PyTgCalls):
                     duration = media.duration_sec
                     # Build progress bar with same length as update_timer
                     length = 10
-                    pos = min(int((played / duration) * length), length - 1) if duration else 0
+                    pos = min(int((played / duration) * length),
+                              length - 1) if duration else 0
                     timer_bar = "—" * pos + "●" + "—" * (length - pos - 1)
-                    played_time = time_module.strftime('%M:%S', time_module.gmtime(played))
-                    total_time = time_module.strftime('%M:%S', time_module.gmtime(duration))
+                    played_time = time_module.strftime(
+                        '%M:%S', time_module.gmtime(played))
+                    total_time = time_module.strftime(
+                        '%M:%S', time_module.gmtime(duration))
                     timer_text = f"{played_time} {timer_bar} {total_time}"
                     keyboard = buttons.controls(chat_id, timer=timer_text)
                 else:
@@ -200,7 +203,8 @@ class TgCall(PyTgCalls):
     async def boot(self) -> None:
         PyTgCallsSession.notice_displayed = True
         for ub in userbot.clients:
-            client = PyTgCalls(ub, cache_duration=300)  # Increased cache for better performance
+            # Increased cache for better performance
+            client = PyTgCalls(ub, cache_duration=300)
             await client.start()
             self.clients.append(client)
             await self.decorators(client)

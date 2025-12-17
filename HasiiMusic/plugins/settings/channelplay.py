@@ -3,12 +3,12 @@
 # ==============================================================================
 # This plugin enables playing music in linked channels instead of the group voice chat.
 # Useful for groups with linked channels.
-# 
+#
 # Commands:
 # - /channelplay linked - Enable for linked channel
 # - /channelplay <channel_id> - Enable for specific channel
 # - /channelplay disable - Disable channel play mode
-# 
+#
 # Requirements:
 # - User must be admin
 # - Bot must be admin in the channel

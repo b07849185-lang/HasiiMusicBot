@@ -30,7 +30,7 @@ async def _help(_, m: types.Message):
 async def start(_, message: types.Message):
     """
     Handle /start command - welcome message for users.
-    
+
     - In private chat: Shows welcome message with inline buttons
     - In group chat: Shows short welcome message
     - Adds new users to database
@@ -39,7 +39,7 @@ async def start(_, message: types.Message):
     # Skip if message from channel or anonymous admin
     if not message.from_user:
         return
-    
+
     # Check if user is blacklisted
     if message.from_user.id in app.bl_users and message.from_user.id not in db.notified:
         return await message.reply_text(message.lang["bl_user_notify"])
@@ -50,7 +50,7 @@ async def start(_, message: types.Message):
 
     # Determine if chat is private or group
     private = message.chat.type == enums.ChatType.PRIVATE
-    
+
     # Choose appropriate welcome message
     _text = (
         message.lang["start_pm"].format(message.from_user.first_name, app.name)
@@ -81,7 +81,7 @@ async def start(_, message: types.Message):
 async def settings(_, message: types.Message):
     """
     Handle /playmode or /settings command - show group settings.
-    
+
     Displays:
     - Play mode (everyone or admin only)
     - Current language
@@ -103,7 +103,7 @@ async def settings(_, message: types.Message):
 async def _new_member(_, message: types.Message):
     """
     Handle new member events - detect when bot is added to groups.
-    
+
     - Leaves non-supergroup chats
     - Adds new groups to database
     """

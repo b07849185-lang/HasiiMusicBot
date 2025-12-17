@@ -35,62 +35,62 @@ broadcasting: bool = False
 async def broadcast_message(_, message: types.Message) -> None:
     """
     Broadcast a message to all groups and/or users.
-    
+
     Usage:
         /broadcast <reply to message> - Forward message to all groups
         /broadcast -copy <reply to message> - Send as copy (no forward tag) to all groups
         /broadcast -user <reply to message> - Forward to all groups and users
         /broadcast -nochat -user <message> - Send only to users
-    
+
     Args:
         message: The Telegram message containing the broadcast command.
-    
+
     Returns:
         None
     """
     global broadcasting
-    
+
     # Check if another broadcast is already running
     if broadcasting:
         return await message.reply_text(message.lang["gcast_active"])
-    
+
     # Determine if the command was a reply to a media message
     media_message = None
     if message.reply_to_message:
         media_message = message.reply_to_message
-    
+
     # Parse command: extract flags and actual message
     flags, broadcast_text = _parse_broadcast_command(message.text)
-    
+
     # Validate: either text or media must be present
     if not broadcast_text and not media_message:
         return await message.reply_text(message.lang["gcast_usage"])
-    
+
     # Determine recipients based on flags
     groups, users = await _get_broadcast_recipients(flags)
     all_chats = groups + users
-    
+
     if not all_chats:
         return await message.reply_text(
             "❌ No recipients found. Make sure the bot is added to groups or has users."
         )
-    
+
     # Set broadcasting flag
     broadcasting = True
     sent = await message.reply_text(message.lang["gcast_start"])
-    
+
     # Log broadcast initiation
     await _log_broadcast_start(message)
     await asyncio.sleep(5)
-    
+
     # Perform the broadcast (supports text and media messages)
     success_groups, success_users, failed_chats = await _send_broadcast(
         broadcast_text, groups, users, sent, media_message, flags
     )
-    
+
     # Reset broadcasting flag
     broadcasting = False
-    
+
     # Send completion message
     await _send_broadcast_completion(
         message, sent, success_groups, success_users, failed_chats, media_message
@@ -102,20 +102,20 @@ async def broadcast_message(_, message: types.Message) -> None:
 async def stop_broadcast(_, message: types.Message) -> None:
     """
     Stop an ongoing broadcast operation.
-    
+
     Args:
         message: The Telegram message containing the stop command.
-    
+
     Returns:
         None
     """
     global broadcasting
-    
+
     if not broadcasting:
         return await message.reply_text(message.lang["gcast_inactive"])
-    
+
     broadcasting = False
-    
+
     # Log broadcast stop
     await (await app.send_message(
         chat_id=app.logger,
@@ -124,36 +124,36 @@ async def stop_broadcast(_, message: types.Message) -> None:
             message.from_user.mention
         )
     )).pin(disable_notification=False)
-    
+
     await message.reply_text(message.lang["gcast_stop"])
 
 
 def _parse_broadcast_command(text: str) -> Tuple[List[str], str]:
     """
     Parse broadcast command to extract flags and message.
-    
+
     Args:
         text: The full command text.
-    
+
     Returns:
         Tuple of (flags list, message text)
     """
     # Handle None or empty text
     if not text:
         return [], ""
-    
+
     # Split command from the rest (preserve everything after command)
     parts = text.split(None, 1)
     if len(parts) < 2:
         return [], ""
-    
+
     remaining_text = parts[1]
-    
+
     # Extract flags (words starting with '-') from the beginning
     flags = []
     lines = remaining_text.split('\n')
     first_line_parts = lines[0].split()
-    
+
     # Collect flags only from first line
     message_start_index = 0
     for i, part in enumerate(first_line_parts):
@@ -163,52 +163,54 @@ def _parse_broadcast_command(text: str) -> Tuple[List[str], str]:
         else:
             # Stop collecting flags once we hit non-flag text
             break
-    
+
     # Reconstruct message preserving all newlines and formatting
     if message_start_index > 0:
         # Remove flags from first line
-        first_line_without_flags = ' '.join(first_line_parts[message_start_index:])
+        first_line_without_flags = ' '.join(
+            first_line_parts[message_start_index:])
         if len(lines) > 1:
-            message_text = first_line_without_flags + '\n' + '\n'.join(lines[1:])
+            message_text = first_line_without_flags + \
+                '\n' + '\n'.join(lines[1:])
         else:
             message_text = first_line_without_flags
     else:
         message_text = remaining_text
-    
+
     return flags, message_text.strip()
 
 
 async def _get_broadcast_recipients(flags: List[str]) -> Tuple[List[int], List[int]]:
     """
     Get list of groups and users to broadcast to based on flags.
-    
+
     Args:
         flags: List of command flags.
-    
+
     Returns:
         Tuple of (groups list, users list)
     """
     groups = []
     users = []
-    
+
     # Include groups unless -nochat flag is present
     if "-nochat" not in flags:
         groups = await db.get_chats()
-    
+
     # Include users if -user flag is present
     if "-user" in flags:
         users = await db.get_users()
-    
+
     return groups, users
 
 
 async def _log_broadcast_start(message: types.Message) -> None:
     """
     Log broadcast initiation to logger group.
-    
+
     Args:
         message: The original broadcast command message.
-    
+
     Returns:
         None
     """
@@ -233,38 +235,39 @@ async def _send_broadcast(
 ) -> Tuple[int, int, str]:
     """
     Send broadcast message to all recipients.
-    
+
     Args:
         text: Message text to broadcast.
         groups: List of group chat IDs.
         users: List of user IDs.
         status_message: Message to update with progress.
         media_message: Optional media message to broadcast.
-    
+
     Returns:
         Tuple of (successful groups count, successful users count, failed chats log)
     """
     global broadcasting
-    
+
     # Use provided flags or default to empty list
     if flags is None:
         flags = []
-    
+
     success_groups = 0
     success_users = 0
     failed_log = ""
     pinned_count = 0
     all_chats = groups + users
     total_chats = len(all_chats)
-    
+
     for index, chat_id in enumerate(all_chats, start=1):
         # Check if broadcast was stopped
         if not broadcasting:
             await status_message.edit_text(
-                status_message.lang["gcast_stopped"].format(success_groups, success_users)
+                status_message.lang["gcast_stopped"].format(
+                    success_groups, success_users)
             )
             break
-        
+
         # Update progress every 50 chats
         if index % 50 == 0:
             try:
@@ -276,7 +279,7 @@ async def _send_broadcast(
                 )
             except:
                 pass
-        
+
         # Attempt to send message
         try:
             # Check if it's a channel (not a group) - skip channels
@@ -293,7 +296,7 @@ async def _send_broadcast(
             # If a media message was provided, forward or copy based on -copy flag
             if media_message:
                 sent_message = None
-                
+
                 # Check if -copy flag is present
                 if "-copy" in flags:
                     # Copy mode: send media without forward tag
@@ -301,7 +304,8 @@ async def _send_broadcast(
                     try:
                         if media_message.photo:
                             # Photo is a list of PhotoSize objects, get the largest
-                            file_id = media_message.photo.file_id if hasattr(media_message.photo, 'file_id') else media_message.photo[-1].file_id
+                            file_id = media_message.photo.file_id if hasattr(
+                                media_message.photo, 'file_id') else media_message.photo[-1].file_id
                             sent_message = await app.send_photo(chat_id=chat_id, photo=file_id, caption=caption)
                         elif getattr(media_message, 'video', None):
                             file_id = media_message.video.file_id
@@ -323,14 +327,15 @@ async def _send_broadcast(
                             sent_message = await app.send_sticker(chat_id=chat_id, sticker=file_id)
                         else:
                             # Text-only message: copy the text
-                            message_text = text if text else (media_message.text or media_message.caption or "")
+                            message_text = text if text else (
+                                media_message.text or media_message.caption or "")
                             if message_text:
                                 sent_message = await app.send_message(chat_id, message_text)
                             else:
                                 failed_log += f"{chat_id} - Empty message\n"
                                 await asyncio.sleep(0.3)
                                 continue
-                        
+
                         # Handle pinning if requested
                         if sent_message and chat_id in groups:
                             if "-pin" in flags:
@@ -345,7 +350,7 @@ async def _send_broadcast(
                                     pinned_count += 1
                                 except:
                                     pass
-                                    
+
                     except Exception as send_ex:
                         failed_log += f"{chat_id} - Media send failed: {type(send_ex).__name__}: {str(send_ex)}\n"
                         continue
@@ -353,7 +358,7 @@ async def _send_broadcast(
                     # Forward mode: forward the message with forward tag
                     try:
                         sent_message = await media_message.forward(chat_id)
-                        
+
                         # Handle pinning if requested
                         if sent_message and chat_id in groups:
                             if "-pin" in flags:
@@ -374,8 +379,8 @@ async def _send_broadcast(
             else:
                 # No media: send text message
                 sent_message = await app.send_message(chat_id, text)
-                
-                # Handle pinning if requested  
+
+                # Handle pinning if requested
                 if sent_message and chat_id in groups:
                     if "-pin" in flags:
                         try:
@@ -398,7 +403,7 @@ async def _send_broadcast(
 
             # Anti-flood delay: 300ms between messages (safer than 100ms)
             await asyncio.sleep(0.3)
-            
+
         except errors.FloodWait as fw:
             # Handle flood wait by waiting and continuing (don't stop broadcast)
             try:
@@ -409,19 +414,21 @@ async def _send_broadcast(
                 )
             except:
                 pass
-            
+
             await asyncio.sleep(fw.value + 5)
-            
+
             # Retry sending after waiting
             try:
                 retry_sent = None
                 if media_message:
                     # Check if -copy flag for retry as well
                     if "-copy" in flags:
-                        caption = text if text else (media_message.caption or "")
+                        caption = text if text else (
+                            media_message.caption or "")
                         if media_message.photo:
                             # Photo is a list of PhotoSize objects, get the largest
-                            file_id = media_message.photo.file_id if hasattr(media_message.photo, 'file_id') else media_message.photo[-1].file_id
+                            file_id = media_message.photo.file_id if hasattr(
+                                media_message.photo, 'file_id') else media_message.photo[-1].file_id
                             retry_sent = await app.send_photo(chat_id=chat_id, photo=file_id, caption=caption)
                         elif getattr(media_message, 'video', None):
                             file_id = media_message.video.file_id
@@ -448,7 +455,7 @@ async def _send_broadcast(
                         retry_sent = await media_message.forward(chat_id)
                 else:
                     retry_sent = await app.send_message(chat_id, text)
-                
+
                 # Handle pinning on retry
                 if retry_sent and chat_id in groups:
                     if "-pin" in flags:
@@ -463,24 +470,24 @@ async def _send_broadcast(
                             pinned_count += 1
                         except:
                             pass
-                    
+
                 if chat_id in groups:
                     success_groups += 1
                 else:
                     success_users += 1
             except Exception as retry_ex:
                 failed_log += f"{chat_id} - FloodWait retry failed: {retry_ex}\n"
-        
+
         except errors.UserIsBlocked:
             # User blocked the bot - skip silently
             failed_log += f"{chat_id} - User blocked bot\n"
             continue
-            
+
         except errors.ChatWriteForbidden:
             # Bot can't write in this chat - skip
             failed_log += f"{chat_id} - No write permission\n"
             continue
-        
+
         except errors.ChannelPrivate:
             # Bot was removed from channel/group - remove from database
             if chat_id in groups:
@@ -492,7 +499,7 @@ async def _send_broadcast(
             else:
                 failed_log += f"{chat_id} - Channel private\n"
             continue
-            
+
         except errors.PeerIdInvalid:
             # Invalid chat ID - remove from database
             if chat_id in groups:
@@ -504,12 +511,12 @@ async def _send_broadcast(
             else:
                 failed_log += f"{chat_id} - Invalid user ID\n"
             continue
-            
+
         except Exception as ex:
             # Log failed send but CONTINUE to next chat
             failed_log += f"{chat_id} - {type(ex).__name__}: {str(ex)}\n"
             continue
-    
+
     return success_groups, success_users, failed_log
 
 
@@ -523,7 +530,7 @@ async def _send_broadcast_completion(
 ) -> None:
     """
     Send broadcast completion message with results.
-    
+
     Args:
         message: Original command message.
         status_message: Status message to edit.
@@ -531,7 +538,7 @@ async def _send_broadcast_completion(
         success_users: Number of successful user sends.
         failed_log: Log of failed sends.
         media_message: Optional media message that was broadcast.
-    
+
     Returns:
         None
     """
@@ -549,21 +556,22 @@ async def _send_broadcast_completion(
             media_type = "animation"
         elif getattr(media_message, 'sticker', None):
             media_type = "sticker"
-    
-    completion_text = message.lang["gcast_end"].format(success_groups, success_users)
+
+    completion_text = message.lang["gcast_end"].format(
+        success_groups, success_users)
     if media_message:
         completion_text += f"\n📎 Media type: {media_type}"
-    
+
     # If there were failures, send error file
     if failed_log:
         error_file = "errors.txt"
         with open(error_file, "w") as f:
             f.write(failed_log)
-        
+
         await message.reply_document(
             document=error_file,
             caption=completion_text,
         )
         os.remove(error_file)
-    
+
     await status_message.edit_text(completion_text)

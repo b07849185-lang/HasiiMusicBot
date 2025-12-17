@@ -2,11 +2,11 @@
 # queue.py - Queue Display Command
 # ==============================================================================
 # This plugin displays the current queue and now playing information.
-# 
+#
 # Commands:
 # - /queue - Show current queue
 # - /playing - Same as /queue
-# 
+#
 # Displays:
 # - Currently playing track with thumbnail
 # - Track title, duration, user who requested

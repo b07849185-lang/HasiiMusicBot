@@ -8,7 +8,7 @@
 # - blacklist: Blacklisted users/chats
 # - calls: Active voice call sessions
 # - cache: Admin list cache
-# 
+#
 # Features:
 # - Async MongoDB operations for better performance
 # - Connection pooling for efficiency
@@ -75,12 +75,12 @@ class MongoDB:
             await self.mongo.admin.command("ping")
             logger.info(
                 f"✅ Database connection successful. ({time() - start:.2f}s)")
-            
+
             # Create indexes for faster queries
             await self.authdb.create_index("_id")
             await self.langdb.create_index("_id")
             await self.cache.create_index("_id")
-            
+
             await self.load_cache()
         except Exception as e:
             raise SystemExit(
@@ -112,7 +112,7 @@ class MongoDB:
         # Cache admin list for 5 minutes to reduce API calls
         current_time = time()
         cache_age = current_time - self.admin_cache_time.get(chat_id, 0)
-        
+
         if chat_id not in self.admin_list or reload or cache_age > 300:
             self.admin_list[chat_id] = await reload_admins(chat_id)
             self.admin_cache_time[chat_id] = current_time

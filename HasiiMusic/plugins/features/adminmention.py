@@ -1,14 +1,14 @@
 # ==============================================================================
 # adminmention.py - Admin Mention Plugin
 # ==============================================================================
-# This plugin allows users to mention all group admins by typing @admin, 
+# This plugin allows users to mention all group admins by typing @admin,
 # .admin, or /admin followed by a message.
-# 
+#
 # Commands:
 # - @admin [message] - Mention all admins with a message
 # - .admin [message] - Mention all admins with a message
 # - /admin [message] - Mention all admins with a message
-# 
+#
 # Requirements:
 # - Bot must have permission to read messages in the group
 # ==============================================================================
@@ -31,7 +31,7 @@ async def mention_admins(_, message: types.Message):
     # Extract the message without the trigger
     message_text = message.text or message.caption or ""
     cleaned_text = TRIGGER_PATTERN.sub("", message_text).strip()
-    
+
     # Get user info (handle anonymous admins)
     sender = message.from_user
     if sender:
@@ -41,7 +41,7 @@ async def mention_admins(_, message: types.Message):
     else:
         # Anonymous admin or channel
         user_display = "ᴀɴᴏɴʏᴍᴏᴜꜱ ᴀᴅᴍɪɴ"
-    
+
     # Guard condition if user sends empty mentions
     if not cleaned_text:
         warning_msg = (
@@ -50,13 +50,13 @@ async def mention_admins(_, message: types.Message):
         )
         await message.reply_text(warning_msg)
         return
-    
+
     # Build formatted reply message
     reply_msg = (
         f"<blockquote><b><i>\"{cleaned_text}\"</i></b>\n"
         f"ʀᴇᴘᴏʀᴛᴇᴅ ʙʏ: {user_display} 🔔</blockquote>\n\n"
     )
-    
+
     # Get all administrators
     mentions = []
     try:
@@ -65,34 +65,35 @@ async def mention_admins(_, message: types.Message):
             filter=enums.ChatMembersFilter.ADMINISTRATORS
         ):
             user = admin.user
-            
+
             # Skip bots and deleted accounts
             if user.is_bot or user.is_deleted:
                 continue
-            
+
             # Skip admins who have "Remain Anonymous" enabled
             # Check privileges - if is_anonymous privilege is True, skip them
             if hasattr(admin, 'privileges') and admin.privileges:
                 if getattr(admin.privileges, 'is_anonymous', False):
                     continue
-            
+
             # Add mention
             if user.username:
                 mentions.append(f"@{user.username}")
             else:
                 # Use HTML link format to mention users without username
-                mentions.append(f"<a href='tg://user?id={user.id}'>{user.first_name}</a>")
+                mentions.append(
+                    f"<a href='tg://user?id={user.id}'>{user.first_name}</a>")
     except Exception as e:
         await message.reply_text(
             "<blockquote>❌ Failed to fetch administrators. Make sure the bot has proper permissions.</blockquote>"
         )
         return
-    
+
     if mentions:
         reply_msg += ", ".join(mentions)
     else:
         reply_msg += "<i>No visible human admins found to mention.</i>"
-    
+
     # Send the reply
     try:
         await message.reply_text(reply_msg, disable_web_page_preview=True)

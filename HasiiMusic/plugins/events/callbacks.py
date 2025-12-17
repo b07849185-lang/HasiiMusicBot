@@ -2,13 +2,13 @@
 # callbacks.py - Callback Query Handler
 # ==============================================================================
 # This plugin handles inline button callbacks (when users press inline buttons).
-# 
+#
 # Callback Types:
 # - cancel_dl - Cancel ongoing download
 # - controls - Playback controls (pause, resume, skip, replay, etc.)
 # - close - Close/delete message
 # - help_menu - Navigate help pages
-# 
+#
 # Most callbacks require admin/authorized user permissions.
 # ==============================================================================
 
@@ -51,7 +51,8 @@ async def _controls(_, query: types.CallbackQuery):
         await tune.pause(chat_id)
         if qaction:
             return await query.edit_message_reply_markup(
-                reply_markup=buttons.queue_markup(chat_id, query.lang["paused"], False)
+                reply_markup=buttons.queue_markup(
+                    chat_id, query.lang["paused"], False)
             )
         status = query.lang["paused"]
         reply = query.lang["play_paused"].format(user)
@@ -63,7 +64,8 @@ async def _controls(_, query: types.CallbackQuery):
         await tune.resume(chat_id)
         if qaction:
             return await query.edit_message_reply_markup(
-                reply_markup=buttons.queue_markup(chat_id, query.lang["playing"], True)
+                reply_markup=buttons.queue_markup(
+                    chat_id, query.lang["playing"], True)
             )
         reply = query.lang["play_resumed"].format(user)
 
@@ -82,7 +84,8 @@ async def _controls(_, query: types.CallbackQuery):
         queue.force_add(chat_id, media, remove=pos)
         try:
             await app.delete_messages(
-                chat_id=chat_id, message_ids=[m_id, media.message_id], revoke=True
+                chat_id=chat_id, message_ids=[
+                    m_id, media.message_id], revoke=True
             )
             media.message_id = None
         except:
@@ -136,7 +139,8 @@ async def _help(_, query: types.CallbackQuery):
 
     if data[1] == "back":
         return await query.edit_message_text(
-            text=query.lang["help_menu"], reply_markup=buttons.help_markup(query.lang)
+            text=query.lang["help_menu"], reply_markup=buttons.help_markup(
+                query.lang)
         )
     elif data[1] == "close":
         try:

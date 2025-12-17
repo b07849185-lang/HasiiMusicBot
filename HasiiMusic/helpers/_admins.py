@@ -19,11 +19,11 @@ from HasiiMusic import app, db
 def admin_check(func):
     """
     Decorator to check if user is an admin in the chat.
-    
+
     - Allows sudo users (owner) to bypass admin check
     - Checks if user is in the admin list for the chat
     - Returns error message if user is not admin
-    
+
     Usage:
         @admin_check
         async def my_admin_command(_, message):
@@ -46,7 +46,7 @@ def admin_check(func):
             else update.message.chat.id
         )
         user_id = update.from_user.id
-        
+
         # Get list of admins from database (cached)
         admins = await db.get_admins(chat_id)
 
@@ -67,12 +67,12 @@ def admin_check(func):
 def can_manage_vc(func):
     """
     Decorator to check if user can manage voice chats.
-    
+
     Allows:
     - Sudo users (bot owner)
     - Authorized users (added via /auth command)
     - Group admins with voice chat management permission
-    
+
     Usage:
         @can_manage_vc
         async def my_vc_command(_, message):
@@ -87,11 +87,11 @@ def can_manage_vc(func):
             if isinstance(update, types.Message)
             else update.message.chat.id
         )
-        
+
         # Skip if no user (channel post or anonymous admin)
         if not update.from_user:
             return
-        
+
         user_id = update.from_user.id
 
         # Sudo users can always manage VC

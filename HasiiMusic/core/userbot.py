@@ -15,21 +15,23 @@ class Userbot(Client):
     def __init__(self):
         """
         Initialize userbot with multiple assistant clients.
-        
+
         Creates up to 3 assistant clients based on available session strings.
         Each assistant can independently join voice chats and stream music.
         More assistants = ability to serve more groups simultaneously.
         """
         self.clients = []  # List to store all active assistant clients
-        
+
         # Map of client names to their session string config keys
         clients = {"one": "SESSION1", "two": "SESSION2", "three": "SESSION3"}
-        
+
         # Create a Pyrogram client for each configured session
         for key, string_key in clients.items():
-            name = f"HasiiTuneUB{key[-1]}"  # Unique name: HasiiTuneUB1, HasiiTuneUB2, etc.
-            session = getattr(config, string_key)  # Get session string from config
-            
+            # Unique name: HasiiTuneUB1, HasiiTuneUB2, etc.
+            name = f"HasiiTuneUB{key[-1]}"
+            # Get session string from config
+            session = getattr(config, string_key)
+
             # Create and attach the client as an attribute (self.one, self.two, self.three)
             setattr(
                 self,
@@ -62,17 +64,22 @@ class Userbot(Client):
         except Exception as e:
             logger.error(f"❌ Assistant {num} failed to start: {e}")
             return  # Don't raise SystemExit, just skip this assistant
-        
+
         try:
             await client.send_message(config.LOGGER_ID, f"Assistant {num} Started")
         except Exception as e:
-            logger.warning(f"⚠️ Assistant {num} couldn't send message to logger: {e}")
+            logger.warning(
+                f"⚠️ Assistant {num} couldn't send message to logger: {e}")
             # Continue anyway - this is not critical
 
-        client.id = client.me.id if hasattr(client, 'me') and client.me else None
-        client.name = client.me.first_name if hasattr(client, 'me') and client.me else f"Assistant{num}"
-        client.username = client.me.username if hasattr(client, 'me') and client.me else None
-        client.mention = client.me.mention if hasattr(client, 'me') and client.me else client.name
+        client.id = client.me.id if hasattr(
+            client, 'me') and client.me else None
+        client.name = client.me.first_name if hasattr(
+            client, 'me') and client.me else f"Assistant{num}"
+        client.username = client.me.username if hasattr(
+            client, 'me') and client.me else None
+        client.mention = client.me.mention if hasattr(
+            client, 'me') and client.me else client.name
         self.clients.append(client)
         logger.info(f"👤 Assistant {num} started as @{client.username}")
 

@@ -22,9 +22,11 @@ from HasiiMusic.helpers import Media, buttons, utils
 class Telegram:
     def __init__(self):
         """Initialize the Telegram download handler."""
-        self.active = []  # List of currently downloading file IDs (prevent duplicates)
+        self.active = [
+        ]  # List of currently downloading file IDs (prevent duplicates)
         self.events = {}  # Dictionary of download events for cancellation
-        self.last_edit = {}  # Track last progress update time (for rate limiting)
+        # Track last progress update time (for rate limiting)
+        self.last_edit = {}
         self.active_tasks = {}  # Active download tasks for cancellation
         self.sleep = 5  # Minimum seconds between progress updates
 
@@ -35,11 +37,11 @@ class Telegram:
     async def download(self, msg: types.Message, sent: types.Message) -> Media | None:
         """
         Download media from a Telegram message with progress tracking.
-        
+
         Args:
             msg: The message containing the media
             sent: The status message to update with progress
-            
+
         Returns:
             Media object if successful, None if failed or cancelled
         """
@@ -51,10 +53,13 @@ class Telegram:
 
         # Extract media information from message
         media = msg.audio or msg.voice or msg.document
-        file_id = getattr(media, "file_unique_id", None)  # Unique file identifier
-        file_ext = getattr(media, "file_name", "").split(".")[-1]  # File extension
+        # Unique file identifier
+        file_id = getattr(media, "file_unique_id", None)
+        file_ext = getattr(media, "file_name", "").split(
+            ".")[-1]  # File extension
         file_size = getattr(media, "file_size", 0)  # File size in bytes
-        file_title = getattr(media, "title", "Telegram File") or "Telegram File"  # Media title
+        file_title = getattr(
+            media, "title", "Telegram File") or "Telegram File"  # Media title
         duration = getattr(media, "duration", 0)  # Duration in seconds
 
         # Validate duration limit (configured in config.py)

@@ -3,12 +3,12 @@
 # ==============================================================================
 # This plugin allows the bot owner to add/remove sudo users.
 # Sudo users have elevated permissions and can use admin commands.
-# 
+#
 # Commands:
 # - /addsudo <user> - Grant sudo permissions
 # - /delsudo <user> - Revoke sudo permissions
 # - /rmsudo <user> - Same as /delsudo
-# 
+#
 # Only the bot owner (defined in config) can manage sudo users.
 # ==============================================================================
 
@@ -42,6 +42,7 @@ async def _sudo(_, m: types.Message):
 
 
 o_mention = None
+
 
 @app.on_message(filters.command(["listsudo", "sudolist"]))
 @lang.language()

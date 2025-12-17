@@ -2,11 +2,11 @@
 # seek.py - Seek to Timestamp Command
 # ==============================================================================
 # This plugin allows seeking to a specific timestamp in the current track.
-# 
+#
 # Commands:
 # - /seek <seconds> - Seek forward to timestamp
 # - /seekback <seconds> - Seek backward to timestamp
-# 
+#
 # Requirements:
 # - User must be admin or authorized user
 # - Music must be playing (not paused)

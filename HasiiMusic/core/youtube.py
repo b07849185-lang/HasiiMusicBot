@@ -31,14 +31,14 @@ class YouTube:
         self.cookies = []  # List of available cookie files
         self.checked = False  # Whether cookies directory has been checked
         self.warned = False  # Whether missing cookies warning has been shown
-        
+
         # Regular expression to match YouTube URLs (videos, shorts, playlists)
         self.regex = re.compile(
             r"(https?://)?(www\.|m\.|music\.)?"
             r"(youtube\.com/(watch\?v=|shorts/|playlist\?list=)|youtu\.be/)"
             r"([A-Za-z0-9_-]{11}|PL[A-Za-z0-9_-]+)([&?][^\s]*)?"
         )
-        
+
         # Cache search results to reduce API calls (10 minute TTL)
         self.search_cache = {}  # {"query_video": (result, timestamp)}
         self.cache_time = {}  # Deprecated, using tuple in search_cache instead
@@ -100,14 +100,14 @@ class YouTube:
         # Check cache first (10-minute TTL)
         cache_key = f"{query}_{video}"
         current_time = asyncio.get_event_loop().time()
-        
+
         if cache_key in self.search_cache:
             cached_result, cache_timestamp = self.search_cache[cache_key]
             if current_time - cache_timestamp < 600:  # 10 minutes
                 # Return cached result with new message_id
                 cached_result.message_id = m_id
                 return cached_result
-        
+
         _search = VideosSearch(query, limit=1)
         results = await _search.next()
         if results and results["result"]:
@@ -129,14 +129,15 @@ class YouTube:
                 video=video,
                 is_live=is_live,
             )
-            
+
             # Cache the result
             self.search_cache[cache_key] = (track, current_time)
             # Limit cache size to 100 entries
             if len(self.search_cache) > 100:
-                oldest_key = min(self.search_cache.keys(), key=lambda k: self.search_cache[k][1])
+                oldest_key = min(self.search_cache.keys(),
+                                 key=lambda k: self.search_cache[k][1])
                 del self.search_cache[oldest_key]
-            
+
             return track
         return None
 
@@ -144,29 +145,31 @@ class YouTube:
         try:
             plist = await Playlist.get(url)
             tracks = []
-            
+
             # Check if plist has videos
             if not plist or "videos" not in plist or not plist["videos"]:
                 return []
-            
+
             for data in plist["videos"][:limit]:
                 try:
                     # Get thumbnail safely
                     thumbnails = data.get("thumbnails", [])
                     thumbnail_url = ""
                     if thumbnails and len(thumbnails) > 0:
-                        thumbnail_url = thumbnails[-1].get("url", "").split("?")[0]
-                    
+                        thumbnail_url = thumbnails[-1].get(
+                            "url", "").split("?")[0]
+
                     # Get link safely
                     link = data.get("link", "")
                     if "&list=" in link:
                         link = link.split("&list=")[0]
-                    
+
                     track = Track(
                         id=data.get("id", ""),
                         channel_name=data.get("channel", {}).get("name", ""),
                         duration=data.get("duration", "0:00"),
-                        duration_sec=utils.to_seconds(data.get("duration", "0:00")),
+                        duration_sec=utils.to_seconds(
+                            data.get("duration", "0:00")),
                         title=(data.get("title", "Unknown")[:25]),
                         thumbnail=thumbnail_url,
                         url=link,
@@ -178,11 +181,12 @@ class YouTube:
                 except Exception as e:
                     # Skip individual track errors
                     continue
-            
+
             return tracks
         except KeyError as e:
             # Handle YouTube API structure changes
-            raise Exception(f"Failed to parse playlist. YouTube may have changed their structure.")
+            raise Exception(
+                f"Failed to parse playlist. YouTube may have changed their structure.")
         except Exception as e:
             # Re-raise other exceptions
             raise
@@ -209,16 +213,20 @@ class YouTube:
                     except yt_dlp.utils.ExtractorError as ex:
                         error_msg = str(ex)
                         if "Sign in to confirm" in error_msg or "bot" in error_msg.lower():
-                            logger.error("YouTube bot detection triggered. Please update cookies.")
+                            logger.error(
+                                "YouTube bot detection triggered. Please update cookies.")
                         elif "not available" in error_msg.lower():
-                            logger.error("Video format not available or region-blocked.")
+                            logger.error(
+                                "Video format not available or region-blocked.")
                         else:
-                            logger.error("Live stream URL extraction failed: %s", ex)
+                            logger.error(
+                                "Live stream URL extraction failed: %s", ex)
                         return None
                     except yt_dlp.utils.DownloadError as ex:
                         error_msg = str(ex)
                         if "failed to load cookies" in error_msg.lower() or "netscape format" in error_msg.lower():
-                            logger.error("❌ Corrupted cookie file detected for live stream, removing: %s", cookie)
+                            logger.error(
+                                "❌ Corrupted cookie file detected for live stream, removing: %s", cookie)
                             # Remove corrupted cookie
                             if cookie and cookie in self.cookies:
                                 self.cookies.remove(cookie)
@@ -227,10 +235,12 @@ class YouTube:
                             except:
                                 pass
                         else:
-                            logger.error("Unexpected error during live stream extraction: %s", ex)
+                            logger.error(
+                                "Unexpected error during live stream extraction: %s", ex)
                         return None
                     except Exception as ex:
-                        logger.error("Unexpected error during live stream extraction: %s", ex)
+                        logger.error(
+                            "Unexpected error during live stream extraction: %s", ex)
                         return None
 
             stream_url = await asyncio.to_thread(_extract_url)
@@ -283,11 +293,14 @@ class YouTube:
                 except yt_dlp.utils.ExtractorError as ex:
                     error_msg = str(ex)
                     if "Sign in to confirm" in error_msg or "bot" in error_msg.lower():
-                        logger.error("❌ YouTube bot detection: Please update cookies or wait before retrying.")
+                        logger.error(
+                            "❌ YouTube bot detection: Please update cookies or wait before retrying.")
                     elif "not available" in error_msg.lower():
-                        logger.error("❌ Video not available: May be region-blocked or private.")
+                        logger.error(
+                            "❌ Video not available: May be region-blocked or private.")
                     elif "age" in error_msg.lower():
-                        logger.error("❌ Age-restricted video: Cookies required.")
+                        logger.error(
+                            "❌ Age-restricted video: Cookies required.")
                     else:
                         logger.error("❌ YouTube extraction failed: %s", ex)
                     if cookie and cookie in self.cookies:
@@ -296,7 +309,8 @@ class YouTube:
                 except yt_dlp.utils.DownloadError as ex:
                     error_msg = str(ex)
                     if "failed to load cookies" in error_msg.lower() or "netscape format" in error_msg.lower():
-                        logger.error("❌ Corrupted cookie file detected, removing: %s", cookie)
+                        logger.error(
+                            "❌ Corrupted cookie file detected, removing: %s", cookie)
                         # Remove corrupted cookie from list and filesystem
                         if cookie and cookie in self.cookies:
                             self.cookies.remove(cookie)

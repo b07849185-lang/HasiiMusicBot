@@ -2,12 +2,12 @@
 # misc.py - Miscellaneous Event Handlers
 # ==============================================================================
 # This plugin handles various bot events and background tasks.
-# 
+#
 # Events:
 # - Voice chat started/ended - Auto-stop playback
 # - Bot mentioned - Send info message
 # - Auto-leave - Remove inactive assistants from groups every 30 minutes
-# 
+#
 # Features:
 # - Automatic cleanup of inactive voice chat sessions
 # - Bot promotion reminders
@@ -79,36 +79,36 @@ async def track_time():
 async def update_timer(length=10):
     """Update progress bar every 7 seconds for all active chats independently."""
     chat_tasks = {}  # Track individual chat update tasks
-    
+
     async def _preload_next(chat_id, next_media):
         """Pre-download next song without blocking timer updates."""
         try:
             next_media.file_path = await yt.download(next_media.id, video=False)
         except Exception as e:
             print(f"Preload error for chat {chat_id}: {e}")
-    
+
     async def update_chat_timer(chat_id):
         """Update timer for a specific chat every 7 seconds."""
         while True:
             try:
                 await asyncio.sleep(7)
-                
+
                 # Check if chat is still active and playing
                 if chat_id not in db.active_calls or not await db.playing(chat_id):
                     break
-                
+
                 media = queue.get_current(chat_id)
                 if not media:
                     break
-                    
+
                 # Ensure media.time is initialized
                 if not hasattr(media, 'time') or media.time is None:
                     media.time = 0
-                    
+
                 duration, message_id = media.duration_sec, media.message_id
                 if not duration or not message_id:
                     continue
-                    
+
                 played = media.time
                 remaining = duration - played
                 pos = min(int((played / duration) * length), length - 1)
@@ -132,22 +132,23 @@ async def update_timer(length=10):
                 await app.edit_message_reply_markup(
                     chat_id=chat_id,
                     message_id=message_id,
-                    reply_markup=buttons.controls(chat_id=chat_id, timer=timer_text, remove=remove),
+                    reply_markup=buttons.controls(
+                        chat_id=chat_id, timer=timer_text, remove=remove),
                 )
             except Exception as e:
                 print(f"update_timer error for chat {chat_id}: {e}")
                 await asyncio.sleep(1)  # Brief pause before retry
-    
+
     # Monitor and spawn individual chat timers
     while True:
         await asyncio.sleep(2)  # Check for new chats every 2 seconds
-        
+
         for chat_id in list(db.active_calls):
             # Start timer for new active chats
             if chat_id not in chat_tasks:
                 task = asyncio.create_task(update_chat_timer(chat_id))
                 chat_tasks[chat_id] = task
-        
+
         # Clean up finished tasks
         finished_chats = [
             chat_id for chat_id, task in chat_tasks.items()

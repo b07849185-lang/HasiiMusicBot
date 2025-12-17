@@ -8,7 +8,7 @@
 # - Command syntax (query or reply required)
 # - Queue limits
 # - YouTube URL validity
-# 
+#
 # This decorator ensures all play commands have proper validation before execution.
 # ==============================================================================
 
