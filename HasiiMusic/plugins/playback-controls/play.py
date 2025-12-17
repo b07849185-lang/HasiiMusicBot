@@ -16,10 +16,42 @@
 
 from pyrogram import filters
 from pyrogram import types
+from pyrogram.errors import FloodWait, MessageIdInvalid, MessageDeleteForbidden
 
 from HasiiMusic import tune, app, config, db, lang, queue, tg, yt
 from HasiiMusic.helpers import buttons, utils
 from HasiiMusic.helpers._play import checkUB
+import asyncio
+
+
+async def safe_edit(message, text, **kwargs):
+    """
+    Safely edit a message with proper error handling for common Telegram API errors.
+    
+    Args:
+        message: The message object to edit
+        text: New text content
+        **kwargs: Additional arguments for edit_text
+        
+    Returns:
+        True if successful, False otherwise
+    """
+    try:
+        await message.edit_text(text, **kwargs)
+        return True
+    except FloodWait as e:
+        await asyncio.sleep(e.value)
+        try:
+            await message.edit_text(text, **kwargs)
+            return True
+        except (MessageIdInvalid, MessageDeleteForbidden, Exception):
+            return False
+    except (MessageIdInvalid, MessageDeleteForbidden):
+        # Message was deleted or became invalid - this is expected
+        return False
+    except Exception:
+        # Other errors - log but don't crash
+        return False
 
 
 def playlist_to_queue(chat_id: int, tracks: list) -> str:
@@ -76,7 +108,14 @@ async def play_hndlr(
                 "ᴍᴀᴋᴇ ꜱᴜʀᴇ ɪ'ᴍ ᴀᴅᴍɪɴ ɪɴ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ ᴀɴᴅ ᴄʜᴀɴɴᴇʟ ᴘʟᴀʏ ɪꜱ ꜱᴇᴛ ᴄᴏʀʀᴇᴄᴛʟʏ."
             )
 
-    sent = await m.reply_text(m.lang["play_searching"])
+    try:
+        sent = await m.reply_text(m.lang["play_searching"])
+    except FloodWait as e:
+        await asyncio.sleep(e.value)
+        sent = await m.reply_text(m.lang["play_searching"])
+    except Exception:
+        return  # If we can't even send initial message, abort
+    
     mention = m.from_user.mention
     media = tg.get_media(m.reply_to_message) if m.reply_to_message else None
     tracks = []
@@ -84,20 +123,23 @@ async def play_hndlr(
 
     if url:
         if "playlist" in url:
-            await sent.edit_text(m.lang["playlist_fetch"])
+            await safe_edit(sent, m.lang["playlist_fetch"])
             try:
                 tracks = await yt.playlist(
                     config.PLAYLIST_LIMIT, mention, url, False
                 )
             except Exception as e:
-                return await sent.edit_text(
+                await safe_edit(
+                    sent,
                     f"<blockquote>❌ ꜰᴀɪʟᴇᴅ ᴛᴏ ꜰᴇᴛᴄʜ ᴘʟᴀʏʟɪꜱᴛ.\n\n"
                     f"ʏᴏᴜᴛᴜʙᴇ ᴘʟᴀʏʟɪꜱᴛꜱ ᴀʀᴇ ᴄᴜʀʀᴇɴᴛʟʏ ᴇxᴘᴇʀɪᴇɴᴄɪɴɢ ɪꜱꜱᴜᴇꜱ. "
                     f"ᴘʟᴇᴀꜱᴇ ᴛʀʏ ᴘʟᴀʏɪɴɢ ɪɴᴅɪᴠɪᴅᴜᴀʟ ꜱᴏɴɢꜱ ɪɴꜱᴛᴇᴀᴅ.</blockquote>"
                 )
+                return
 
             if not tracks:
-                return await sent.edit_text(m.lang["playlist_error"])
+                await safe_edit(sent, m.lang["playlist_error"])
+                return
 
             file = tracks[0]
             tracks.remove(file)
@@ -106,17 +148,21 @@ async def play_hndlr(
             file = await yt.search(url, sent.id, video=False)
 
         if not file:
-            return await sent.edit_text(
+            await safe_edit(
+                sent,
                 m.lang["play_not_found"].format(config.SUPPORT_CHAT)
             )
+            return
 
     elif len(m.command) >= 2:
         query = " ".join(m.command[1:])
         file = await yt.search(query, sent.id, video=False)
         if not file:
-            return await sent.edit_text(
+            await safe_edit(
+                sent,
                 m.lang["play_not_found"].format(config.SUPPORT_CHAT)
             )
+            return
 
     elif media:
         setattr(sent, "lang", m.lang)
@@ -127,9 +173,11 @@ async def play_hndlr(
 
     # Skip duration check for live streams
     if not file.is_live and file.duration_sec > config.DURATION_LIMIT:
-        return await sent.edit_text(
+        await safe_edit(
+            sent,
             m.lang["play_duration_limit"].format(config.DURATION_LIMIT // 60)
         )
+        return
 
     if await db.is_logger():
         await utils.play_log(m, file.title, file.duration)
@@ -144,7 +192,8 @@ async def play_hndlr(
             # When call is active, position 0 is currently playing
             # So actual waiting position is: position (e.g., 1st waiting = index 1)
             # Display as 1-based for users: index 1 → "1st in queue"
-            await sent.edit_text(
+            await safe_edit(
+                sent,
                 m.lang["play_queued"].format(
                     position,  # Shows waiting position: 1, 2, 3...
                     file.url,
@@ -167,7 +216,8 @@ async def play_hndlr(
     if not file.file_path:
         file.file_path = await yt.download(file.id, video=False, is_live=file.is_live)
         if not file.file_path:
-            return await sent.edit_text(
+            await safe_edit(
+                sent,
                 "❌ **Failed to download media.**\n\n"
                 "**Possible reasons:**\n"
                 "• YouTube detected bot activity (update cookies)\n"
@@ -181,7 +231,8 @@ async def play_hndlr(
     except Exception as e:
         error_msg = str(e)
         if "bot" in error_msg.lower() or "sign in" in error_msg.lower():
-            return await sent.edit_text(
+            await safe_edit(
+                sent,
                 "❌ **YouTube bot detection triggered.**\n\n"
                 "**Solution:**\n"
                 "• Update YouTube cookies in `HasiiMusic/cookies/` folder\n"
@@ -190,10 +241,12 @@ async def play_hndlr(
                 f"**Support:** {config.SUPPORT_CHAT}"
             )
         else:
-            return await sent.edit_text(
+            await safe_edit(
+                sent,
                 f"❌ **Playback error:**\n{error_msg}\n\n"
                 f"**Support:** {config.SUPPORT_CHAT}"
             )
+        return
     if not tracks:
         return
     added = playlist_to_queue(chat_id, tracks)
