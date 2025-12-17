@@ -136,7 +136,15 @@ async def update_timer(length=10):
                         chat_id=chat_id, timer=timer_text, remove=remove),
                 )
             except Exception as e:
-                print(f"update_timer error for chat {chat_id}: {e}")
+                error_str = str(e)
+                # Silently ignore expected Telegram API errors
+                if not any(err in error_str for err in [
+                    "MESSAGE_NOT_MODIFIED",
+                    "MESSAGE_ID_INVALID",
+                    "MESSAGE_DELETE",
+                    "CHAT_ADMIN_REQUIRED"
+                ]):
+                    print(f"update_timer error for chat {chat_id}: {e}")
                 await asyncio.sleep(1)  # Brief pause before retry
 
     # Monitor and spawn individual chat timers
