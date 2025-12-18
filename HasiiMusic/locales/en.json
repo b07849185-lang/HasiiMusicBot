@@ -7,7 +7,7 @@
   "auth_added": "<blockquote>ᴀᴅᴅᴇᴅ {0} ᴛᴏ ᴛʜᴇ ᴀᴜᴛʜᴏʀɪᴢᴇᴅ ᴜꜱᴇʀꜱ ʟɪꜱᴛ.</blockquote>",
   "auth_removed": "<blockquote>ʀᴇᴍᴏᴠᴇᴅ {0} ꜰʀᴏᴍ ᴛʜᴇ ᴀᴜᴛʜᴏʀɪᴢᴇᴅ ᴜꜱᴇʀꜱ ʟɪꜱᴛ.</blockquote>",
   "auth_is_admin": "<blockquote>ᴛʜᴇ ᴜꜱᴇʀ ɪꜱ ᴀʟʀᴇᴀᴅʏ ᴀɴ <b>ᴀᴅᴍɪɴ</b> ᴀɴᴅ ᴄᴀɴ'ᴛ ʙᴇ ᴀᴅᴅᴇᴅ ᴛᴏ ᴀᴜᴛʜᴏʀɪᴢᴇᴅ ᴜꜱᴇʀꜱ.</blockquote>",
-  "auto_left": "<blockquote>ɪ ᴡᴀɪᴛᴇᴅ, ɪ ᴡᴀᴛᴄʜᴇᴅ, ɪ ʏᴀᴡɴᴇᴅ... ᴀɴᴅ ᴛʜᴇɴ ɪ ʟᴇꜰᴛ ᴛʜᴇ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ.</blockquote>",
+  "auto_left": "<blockquote>ɪ'ᴍ ʟᴇᴀᴠɪɴɢ ᴛʜᴇ ᴠɪᴅᴇᴏ ᴄʜᴀᴛ ʙᴇᴄᴀᴜꜱᴇ ɴᴏ ᴏɴᴇ ɪꜱ ʟɪꜱᴛᴇɴɪɴɢ ᴛᴏ ᴍᴇ.</blockquote>",
   "bl_usage": "<blockquote><b>ᴜꜱᴀɢᴇ:</b>\n\n/{0} [ᴄʜᴀᴛ_ɪᴅ|ᴜꜱᴇʀ_ɪᴅ]</blockquote>",
   "bl_invalid": "<blockquote>ᴏɴʟʏ ᴄʜᴀᴛ ɪᴅꜱ ᴀɴᴅ ᴜꜱᴇʀ ɪᴅꜱ ᴀʀᴇ ꜱᴜᴘᴘᴏʀᴛᴇᴅ.</blockquote>",
   "bl_already": "<blockquote>ᴛʜɪꜱ ᴄʜᴀᴛ ɪꜱ ᴀʟʀᴇᴀᴅʏ ʙʟᴀᴄᴋʟɪꜱᴛᴇᴅ.</blockquote>",
