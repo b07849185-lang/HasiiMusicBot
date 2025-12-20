@@ -44,7 +44,8 @@ async def main():
 
     # Step 7: Load sudo users and blacklisted users from database
     sudoers = await db.get_sudoers()
-    app.sudoers.update(sudoers)  # Add sudo users to filter
+    app.sudoers.update(sudoers)  # Add sudo users to set
+    app.sudo_filter.update(sudoers)  # Add sudo users to filter
     app.bl_users.update(await db.get_blacklisted())  # Add blacklisted users to filter
     logger.info(f"👑 Loaded {len(app.sudoers)} sudo users.")
     logger.info("\n🎉 Bot started successfully! Ready to play music! 🎵\n")

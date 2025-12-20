@@ -18,7 +18,7 @@ from HasiiMusic import app, db, lang
 from HasiiMusic.helpers import utils
 
 
-@app.on_message(filters.command(["addsudo", "delsudo", "rmsudo"]) & filters.user(app.owner))
+@app.on_message(filters.command(["addsudo", "delsudo", "rmsudo"]) & app.sudo_filter)
 @lang.language()
 async def _sudo(_, m: types.Message):
     user = await utils.extract_user(m)
@@ -30,6 +30,7 @@ async def _sudo(_, m: types.Message):
             return await m.reply_text(m.lang["sudo_already"].format(user.mention))
 
         app.sudoers.add(user.id)
+        app.sudo_filter.update([user.id])
         await db.add_sudo(user.id)
         await m.reply_text(m.lang["sudo_added"].format(user.mention))
     else:
@@ -37,6 +38,8 @@ async def _sudo(_, m: types.Message):
             return await m.reply_text(m.lang["sudo_not"].format(user.mention))
 
         app.sudoers.discard(user.id)
+        app.sudo_filter.update([])  # Reset filter
+        app.sudo_filter.update(app.sudoers)  # Rebuild with remaining users
         await db.del_sudo(user.id)
         await m.reply_text(m.lang["sudo_removed"].format(user.mention))
 

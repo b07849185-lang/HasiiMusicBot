@@ -29,7 +29,8 @@ class Bot(pyrogram.Client):
         owner (int): Owner's user ID
         logger (int): Logger group/channel ID
         bl_users (Filter): Filter for blacklisted users
-        sudoers (Filter): Filter for sudo users (owner)
+        sudoers (set): Set of sudo user IDs
+        sudo_filter (Filter): Filter for sudo users
         id (int): Bot's user ID (set after boot)
         name (str): Bot's first name (set after boot)
         username (str): Bot's username (set after boot)
@@ -52,7 +53,8 @@ class Bot(pyrogram.Client):
         self.owner: int = config.OWNER_ID
         self.logger: int = config.LOGGER_ID
         self.bl_users: pyrogram.filters.Filter = pyrogram.filters.user()
-        self.sudoers: pyrogram.filters.Filter = pyrogram.filters.user(
+        self.sudoers: set = {self.owner}  # Set of sudo user IDs
+        self.sudo_filter: pyrogram.filters.Filter = pyrogram.filters.user(
             self.owner)
 
         # These will be set after boot()
