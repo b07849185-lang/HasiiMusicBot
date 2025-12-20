@@ -14,7 +14,7 @@ from pyrogram import filters, types, errors
 from HasiiMusic import app, db, lang
 
 
-@app.on_message(filters.command(["leave"]) & app.sudoers)
+@app.on_message(filters.command(["leave"]) & app.sudo_filter)
 @lang.language()
 async def _leave(_, m: types.Message):
     """

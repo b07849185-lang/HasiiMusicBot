@@ -22,7 +22,7 @@ from pyrogram import filters, types
 from HasiiMusic import app, db, lang, stop
 
 
-@app.on_message(filters.command(["logs"]) & app.sudoers)
+@app.on_message(filters.command(["logs"]) & app.sudo_filter)
 @lang.language()
 async def _logs(_, m: types.Message):
     sent = await m.reply_text(m.lang["log_fetch"])
@@ -36,7 +36,7 @@ async def _logs(_, m: types.Message):
     )
 
 
-@app.on_message(filters.command(["logger"]) & app.sudoers)
+@app.on_message(filters.command(["logger"]) & app.sudo_filter)
 @lang.language()
 async def _logger(_, m: types.Message):
     if len(m.command) < 2:
@@ -52,7 +52,7 @@ async def _logger(_, m: types.Message):
         await m.reply_text(m.lang["logger_off"])
 
 
-@app.on_message(filters.command(["restart"]) & app.sudoers)
+@app.on_message(filters.command(["restart"]) & app.sudo_filter)
 @lang.language()
 async def _restart(_, m: types.Message):
     sent = await m.reply_text(m.lang["restarting"])
