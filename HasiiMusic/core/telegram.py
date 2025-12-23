@@ -69,8 +69,8 @@ class Telegram:
             await sent.edit_text(sent.lang["play_duration_limit"].format(config.DURATION_LIMIT // 60))
             return await sent.stop_propagation()
 
-        # Validate file size (max 200 MB)
-        if file_size > 200 * 1024 * 1024:
+        # Validate file size (max 5 GB)
+        if file_size > 5 * 1024 * 1024 * 1024:
             await sent.edit_text(sent.lang["dl_limit"])
             return await sent.stop_propagation()
 

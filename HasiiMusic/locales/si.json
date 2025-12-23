@@ -19,7 +19,7 @@
   "dl_complete": "<blockquote>Download කරලා ඉවරයි. File එක process කරනකම් පොඩ්ඩක් ඉන්න...\n\nගත වූ කාලය: {0}s</blockquote>",
   "dl_cancelling": "<blockquote>පොඩ්ඩක් ඉන්න, download එක cancel කරනවා!</blockquote>",
   "dl_active": "<blockquote>ඒ file එක දැනටමත් download වෙන ගමන්. ඉවර වෙනකම් ඉමුද?</blockquote>",
-  "dl_limit": "<blockquote>File එක process කරන්න බෑ. Download කරන්න පුළුවන් උපරිම <b>200 MB</b> විතරයි.</blockquote>",
+  "dl_limit": "<blockquote>File එක process කරන්න බෑ. Download කරන්න පුළුවන් උපරිම <b>5 GB</b> විතරයි.</blockquote>",
   "dl_progress": "<blockquote><u><b>File එක Download කරමින්</b></u>\n\n<b>Progress:</b> {0} / {1} [{2:.1f}%]\n<b>Speed:</b> {3}/s | <b>Time Left:</b> {4}</blockquote>",
   "dl_not_found": "<blockquote>Download එක cancel කරලා ඉවරයි.</blockquote>",
   "error_no_audio": "<blockquote>මීළඟ සින්දුවට යනවා...\n\nFile එකේ audio source එකක් නෑනේ.</blockquote>",
