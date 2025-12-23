@@ -73,7 +73,7 @@ def playlist_to_queue(chat_id: int, tracks: list) -> str:
     return text
 
 @app.on_message(
-    filters.command(["play", "vplay", "playforce", "vplayforce", "cplay", "cvplay", "cplayforce", "cvplayforce"])
+    filters.command(["play", "vplay", "playforce", "cplay", "cplayforce"])
     & filters.group
     & ~app.bl_users
 )
@@ -87,11 +87,9 @@ async def play_hndlr(
     cplay: bool = False,
     video: bool = False,
 ) -> None:
-    # Detect if video mode is requested
-    # Check if command starts with 'v' (vplay, vplayforce) or has 'v' as second character (cvplay, cvplayforce)
+    # Detect if video mode is requested (only /vplay command)
     command = m.command[0].lower()
-    if command[0] == 'v' or (len(command) > 1 and command[1] == 'v'):
-        video = True
+    video = (command == 'vplay')
     
     # Restrict video playback to sudo users only
     if video and m.from_user.id not in app.sudoers:
