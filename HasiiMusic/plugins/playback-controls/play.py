@@ -93,6 +93,10 @@ async def play_hndlr(
     if command[0] == 'v' or (len(command) > 1 and command[1] == 'v'):
         video = True
     
+    # Restrict video playback to sudo users only
+    if video and m.from_user.id not in app.sudoers:
+        return await m.reply_text(m.lang["vplay_sudo_only"])
+    
     # Handle channel play mode
     chat_id = m.chat.id
     if cplay:

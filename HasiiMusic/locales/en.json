@@ -20,6 +20,7 @@
   "dl_cancelling": "<blockquote>ʜᴀɴɢ ᴏɴ, ᴄᴀɴᴄᴇʟʟɪɴɢ ᴛʜᴇ ᴅᴏᴡɴʟᴏᴀᴅ ɴᴏᴡ!</blockquote>",
   "dl_active": "<blockquote>ᴀʟʀᴇᴀᴅʏ ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ᴛʜᴀᴛ ꜰɪʟᴇ. ᴍɪɴᴅ ᴡᴀɪᴛɪɴɢ?</blockquote>",
   "dl_limit": "<blockquote>ꜰᴀɪʟᴇᴅ ᴛᴏ ᴘʀᴏᴄᴇꜱꜱ ᴛʜᴇ ꜰɪʟᴇ. ᴛʜᴇ ᴍᴀxɪᴍᴜᴍ ᴅᴏᴡɴʟᴏᴀᴅ ʟɪᴍɪᴛ ɪꜱ <b>5 ɢʙ</b>.</blockquote>",
+  "vplay_sudo_only": "<blockquote>❌ ᴠɪᴅᴇᴏ ᴘʟᴀʏʙᴀᴄᴋ ɪꜱ ʀᴇꜱᴛʀɪᴄᴛᴇᴅ ᴛᴏ ꜱᴜᴅᴏ ᴜꜱᴇʀꜱ ᴏɴʟʏ ᴅᴜᴇ ᴛᴏ ʜɪɢʜ ʀᴇꜱᴏᴜʀᴄᴇ ᴜꜱᴀɢᴇ.\n\nᴜꜱᴇ /play ꜰᴏʀ ᴀᴜᴅɪᴏ ᴘʟᴀʏʙᴀᴄᴋ ɪɴꜱᴛᴇᴀᴅ.</blockquote>",
   "dl_progress": "<blockquote><u><b>ᴅᴏᴡɴʟᴏᴀᴅɪɴɢ ꜰɪʟᴇ</b></u>\n\n<b>ᴘʀᴏɢʀᴇꜱꜱ:</b> {0} / {1} [{2:.1f}%]\n<b>ꜱᴘᴇᴇᴅ:</b> {3}/𝘀 | <b>ᴇᴛᴀ:</b> {4}</blockquote>",
   "dl_not_found": "<blockquote>ᴅᴏᴡɴʟᴏᴀᴅ ᴀʟʀᴇᴀᴅʏ ᴄᴀɴᴄᴇʟʟᴇᴅ.</blockquote>",
   "error_no_audio": "<blockquote>ᴍᴏᴠɪɴɢ ᴛᴏ ᴛʜᴇ ɴᴇxᴛ ᴛʀᴀᴄᴋ...\n\nᴀᴜᴅɪᴏ ꜱᴏᴜʀᴄᴇ ɴᴏᴛ ꜰᴏᴜɴᴅ ɪɴ ᴛʜᴇ ꜰɪʟᴇ.</blockquote>",
