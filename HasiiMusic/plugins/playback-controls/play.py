@@ -128,7 +128,12 @@ async def play_hndlr(
     tracks = []
     file = None  # Initialize file variable
 
-    if url:
+    # Check media first (Telegram files) before URL extraction
+    if media:
+        setattr(sent, "lang", m.lang)
+        file = await tg.download(m.reply_to_message, sent)
+
+    elif url:
         if "playlist" in url:
             await safe_edit(sent, m.lang["playlist_fetch"])
             try:
@@ -170,10 +175,6 @@ async def play_hndlr(
                 m.lang["play_not_found"].format(config.SUPPORT_CHAT)
             )
             return
-
-    elif media:
-        setattr(sent, "lang", m.lang)
-        file = await tg.download(m.reply_to_message, sent)
 
     if not file:
         return
