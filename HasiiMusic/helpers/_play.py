@@ -47,7 +47,8 @@ def checkUB(play):
         video = command[0] == 'v' or (len(command) > 1 and command[1] == 'v')
         
         url = yt.url(m)
-        if url and not yt.valid(url):
+        # Only validate URL if not replying to media (Telegram files have t.me URLs)
+        if url and not m.reply_to_message and not yt.valid(url):
             return await m.reply_text(m.lang["play_unsupported"])
 
         play_mode = await db.get_play_mode(m.chat.id)
