@@ -125,8 +125,13 @@ async def update_timer(length=10):
                     timer_text = timer_bar
                 else:
                     remove = False
-                    played_time = time.strftime('%M:%S', time.gmtime(played))
-                    total_time = time.strftime('%M:%S', time.gmtime(duration))
+                    # Format time properly with hours support
+                    if duration >= 3600:
+                        played_time = time.strftime('%H:%M:%S', time.gmtime(played))
+                        total_time = time.strftime('%H:%M:%S', time.gmtime(duration))
+                    else:
+                        played_time = time.strftime('%M:%S', time.gmtime(played))
+                        total_time = time.strftime('%M:%S', time.gmtime(duration))
                     timer_text = f"{played_time} {timer_bar} {total_time}"
 
                 await app.edit_message_reply_markup(

@@ -39,6 +39,18 @@ class Utilities:
         else:
             return f"{bytes / 1024:.2f} KB"
 
+    def format_duration(self, seconds: int) -> str:
+        """Format duration as HH:MM:SS or MM:SS depending on length."""
+        if seconds >= 3600:  # 1 hour or more
+            hours = seconds // 3600
+            minutes = (seconds % 3600) // 60
+            secs = seconds % 60
+            return f"{hours}:{minutes:02d}:{secs:02d}"
+        else:  # Less than 1 hour
+            minutes = seconds // 60
+            secs = seconds % 60
+            return f"{minutes:02d}:{secs:02d}"
+
     def to_seconds(self, time: str) -> int:
         parts = [int(p) for p in time.strip().split(":")]
         return sum(value * 60**i for i, value in enumerate(reversed(parts)))

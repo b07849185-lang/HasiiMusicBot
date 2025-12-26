@@ -118,9 +118,15 @@ class Telegram:
                         round(time.time() - start_time, 2))
                 )
 
+            # Format duration with hours support
+            if duration >= 3600:
+                duration_str = time.strftime("%H:%M:%S", time.gmtime(duration))
+            else:
+                duration_str = time.strftime("%M:%S", time.gmtime(duration))
+
             return Media(
                 id=file_id,
-                duration=time.strftime("%M:%S", time.gmtime(duration)),
+                duration=duration_str,
                 duration_sec=duration,
                 file_path=file_path,
                 message_id=sent.id,

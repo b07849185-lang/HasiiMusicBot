@@ -106,10 +106,17 @@ class TgCall(PyTgCalls):
                     pos = min(int((played / duration) * length),
                               length - 1) if duration else 0
                     timer_bar = "—" * pos + "●" + "—" * (length - pos - 1)
-                    played_time = time_module.strftime(
-                        '%M:%S', time_module.gmtime(played))
-                    total_time = time_module.strftime(
-                        '%M:%S', time_module.gmtime(duration))
+                    # Format time properly with hours support
+                    if duration >= 3600:
+                        played_time = time_module.strftime(
+                            '%H:%M:%S', time_module.gmtime(played))
+                        total_time = time_module.strftime(
+                            '%H:%M:%S', time_module.gmtime(duration))
+                    else:
+                        played_time = time_module.strftime(
+                            '%M:%S', time_module.gmtime(played))
+                        total_time = time_module.strftime(
+                            '%M:%S', time_module.gmtime(duration))
                     timer_text = f"{played_time} {timer_bar} {total_time}"
                     keyboard = buttons.controls(chat_id, timer=timer_text)
                 else:
