@@ -258,6 +258,27 @@ async def play_hndlr(
                 sent,
                 f"❌ **Playback error:**\n{error_msg}\n\n"
                 f"**Support:** {config.SUPPORT_CHAT}"
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
             )
         return
     if not tracks:

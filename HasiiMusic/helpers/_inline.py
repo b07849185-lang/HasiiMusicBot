@@ -58,6 +58,13 @@ class Inline:
                         text="▣", callback_data=f"controls stop {chat_id}"),
                 ]
             )
+            # Add CLOSE button in a new row
+            keyboard.append(
+                [
+                    self.ikb(
+                        text="ᴅᴇʟᴇᴛᴇ", callback_data=f"controls close {chat_id}"),
+                ]
+            )
         return self.ikm(keyboard)
 
     def help_markup(
