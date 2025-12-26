@@ -36,31 +36,29 @@ async def _controls(_, query: types.CallbackQuery):
     qaction = len(args) == 4
     user = query.from_user.mention
 
-    # Handle close action first - allow any user to delete the message
+    # Handle close action first - allow any user to delete the message (no popup notification)
     if action == "close":
         try:
             await query.message.delete()
         except:
             pass
-        
-        # Only show notification for non-sudo users
-        if query.from_user.id not in app.sudoers:
-            username = query.from_user.mention
-            try:
-                notification = await app.send_message(
-                    chat_id=chat_id,
-                    text=f"ᴅᴇʟᴇᴛᴇᴅ ʙʏ: {username}"
-                )
-                # Auto-delete after 3 seconds
-                await asyncio.sleep(3)
-                await notification.delete()
-            except:
-                pass
-        
         return await query.answer()
 
     # Check admin permissions for all other controls
-    if not await can_manage_vc(_, query):
+    # Inline permission check: sudo users, authorized users, or group admins
+    user_id = query.from_user.id
+    has_permission = False
+    
+    if user_id in app.sudoers:
+        has_permission = True
+    elif await db.is_auth(chat_id, user_id):
+        has_permission = True
+    else:
+        admins = await db.get_admins(chat_id)
+        if user_id in admins:
+            has_permission = True
+    
+    if not has_permission:
         return await query.answer("⚠️ ʏᴏᴜ ᴅᴏɴ'ᴛ ʜᴀᴠᴇ ᴘᴇʀᴍɪssɪᴏɴ ᴛᴏ ᴜsᴇ ᴛʜɪs.", show_alert=True)
 
     if not await db.get_call(chat_id):
