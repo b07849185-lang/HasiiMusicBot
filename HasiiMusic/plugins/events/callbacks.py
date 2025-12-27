@@ -38,11 +38,12 @@ async def _controls(_, query: types.CallbackQuery):
 
     # Handle close action first - allow any user to delete the message (no popup notification)
     if action == "close":
+        await query.answer()
         try:
             await query.message.delete()
-        except:
+        except Exception:
             pass
-        return await query.answer()
+        return
 
     # Check admin permissions for all other controls
     # Inline permission check: sudo users, authorized users, or group admins
@@ -171,11 +172,16 @@ async def _help(_, query: types.CallbackQuery):
                 query.lang)
         )
     elif data[1] == "close":
+        await query.answer()
         try:
             await query.message.delete()
-            return await query.message.reply_to_message.delete()
-        except:
+        except Exception:
             pass
+        try:
+            await query.message.reply_to_message.delete()
+        except Exception:
+            pass
+        return
 
     await query.edit_message_text(
         text=query.lang[f"help_{data[1]}"],
