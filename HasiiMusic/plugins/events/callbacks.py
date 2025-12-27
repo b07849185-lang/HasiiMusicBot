@@ -248,7 +248,7 @@ async def handle_shuffle(query: types.CallbackQuery, chat_id: int, user: str):
     """Handle queue shuffling."""
     import random
     
-    items = queue.get_all(chat_id)
+    items = queue.get_queue(chat_id)
     if not items or len(items) <= 1:
         return await query.answer("⚠️ ǫᴜᴇᴜᴇ ɪꜱ ᴇᴍᴘᴛʏ ᴏʀ ʜᴀꜱ ᴏɴʟʏ ᴏɴᴇ ᴛʀᴀᴄᴋ!", show_alert=True)
     
