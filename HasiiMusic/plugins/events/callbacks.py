@@ -271,7 +271,7 @@ async def handle_shuffle(query: types.CallbackQuery, chat_id: int, user: str):
     
     await query.answer("🔀 ǫᴜᴇᴜᴇ ꜱʜᴜꜰꜰʟᴇᴅ!", show_alert=False)
     await query.message.reply_text(
-        f"🔀 ǫᴜᴇᴜᴇ **ꜱʜᴜꜰꜰʟᴇᴅ** ({len(remaining)} ᴛʀᴀᴄᴋꜱ)\n\n<blockquote>ʙʏ {user}</blockquote>",
+        f"🔀 ǫᴜᴇᴜᴇ <b>ꜱʜᴜꜰꜰʟᴇᴅ</b> ({len(remaining)} ᴛʀᴀᴄᴋꜱ)",
         quote=False
     )
 
