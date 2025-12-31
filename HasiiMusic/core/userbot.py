@@ -63,6 +63,10 @@ class Userbot(Client):
             await client.start()
         except Exception as e:
             logger.error(f"❌ Assistant {num} failed to start: {e}")
+            logger.error(f"   This could be due to:")
+            logger.error(f"   • Invalid session string (STRING_SESSION{num})")
+            logger.error(f"   • Session logged out from another device")
+            logger.error(f"   • Network/connectivity issues")
             return  # Don't raise SystemExit, just skip this assistant
 
         try:

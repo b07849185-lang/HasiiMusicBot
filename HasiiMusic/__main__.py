@@ -61,4 +61,10 @@ if __name__ == "__main__":
     try:
         asyncio.get_event_loop().run_until_complete(main())
     except KeyboardInterrupt:
-        pass
+        logger.info("Bot stopped by user (Ctrl+C)")
+    except SystemExit as e:
+        logger.error(f"Bot exited with system error: {e}")
+        raise
+    except Exception as e:
+        logger.error(f"Unexpected error caused bot to stop: {e}", exc_info=True)
+        raise

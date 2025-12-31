@@ -40,13 +40,13 @@ class TgCall(PyTgCalls):
         try:
             queue.clear(chat_id)
             await db.remove_call(chat_id)
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Error clearing queue/call for {chat_id}: {e}")
 
         try:
             await client.leave_call(chat_id, close=False)
-        except:
-            pass
+        except Exception as e:
+            logger.warning(f"Error leaving call for {chat_id}: {e}")
 
     async def play_media(
         self,
@@ -227,8 +227,8 @@ class TgCall(PyTgCalls):
                     revoke=True,
                 )
                 media.message_id = 0
-        except:
-            pass
+        except Exception as e:
+            logger.debug(f"Could not delete previous message in {chat_id}: {e}")
 
         if not media:
             return await self.stop(chat_id)

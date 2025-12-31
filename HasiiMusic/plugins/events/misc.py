@@ -52,7 +52,8 @@ async def auto_leave():
                         await ub.leave_chat(chat_id)
                         left += 1
                     await asyncio.sleep(5)
-            except:
+            except Exception as e:
+                logger.error(f"Auto-leave error for assistant {ub.me.username if hasattr(ub, 'me') and ub.me else 'Unknown'}: {e}")
                 continue
 
 
