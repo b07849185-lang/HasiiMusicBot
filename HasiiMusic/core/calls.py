@@ -11,6 +11,7 @@
 # - Thumbnail updates during playback
 # ==============================================================================
 
+import logging
 from ntgcalls import ConnectionNotFound, TelegramServerError
 from pyrogram.errors import MessageIdInvalid
 from pyrogram.types import InputMediaPhoto, Message
@@ -19,6 +20,13 @@ from pytgcalls.pytgcalls_session import PyTgCallsSession
 
 from HasiiMusic import app, config, db, lang, logger, queue, userbot, yt
 from HasiiMusic.helpers import Media, Track, buttons, thumb
+
+# Suppress pytgcalls UpdateGroupCall errors (library bug - harmless)
+class UpdateGroupCallFilter(logging.Filter):
+    def filter(self, record):
+        return 'UpdateGroupCall' not in record.getMessage()
+
+logging.getLogger('pyrogram.dispatcher').addFilter(UpdateGroupCallFilter())
 
 
 class TgCall(PyTgCalls):
@@ -45,8 +53,14 @@ class TgCall(PyTgCalls):
 
         try:
             await client.leave_call(chat_id, close=False)
+        except (ConnectionNotFound, exceptions.NotInCallError):
+            # Expected: userbot is not in a call
+            pass
         except Exception as e:
-            logger.warning(f"Error leaving call for {chat_id}: {e}")
+            # Only log unexpected errors
+            error_msg = str(e)
+            if "not in a call" not in error_msg.lower() and "GROUPCALL_FORBIDDEN" not in error_msg:
+                logger.warning(f"Error leaving call for {chat_id}: {e}")
 
     async def play_media(
         self,
