@@ -85,7 +85,7 @@ async def broadcast_message(_, message: types.Message) -> None:
 
     # Perform the broadcast (supports text and media messages)
     success_groups, success_users, failed_chats = await _send_broadcast(
-        broadcast_text, groups, users, sent, media_message, flags
+        broadcast_text, groups, users, sent, media_message, flags, message.lang
     )
 
     # Reset broadcasting flag
@@ -232,6 +232,7 @@ async def _send_broadcast(
     status_message: types.Message,
     media_message: types.Message | None = None,
     flags: List[str] = None,
+    lang: dict = None,
 ) -> Tuple[int, int, str]:
     """
     Send broadcast message to all recipients.
@@ -242,6 +243,8 @@ async def _send_broadcast(
         users: List of user IDs.
         status_message: Message to update with progress.
         media_message: Optional media message to broadcast.
+        flags: List of command flags.
+        lang: Language dictionary for localized strings.
 
     Returns:
         Tuple of (successful groups count, successful users count, failed chats log)
@@ -263,7 +266,7 @@ async def _send_broadcast(
         # Check if broadcast was stopped
         if not broadcasting:
             await status_message.edit_text(
-                status_message.lang["gcast_stopped"].format(
+                lang["gcast_stopped"].format(
                     success_groups, success_users)
             )
             break
