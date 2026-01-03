@@ -16,6 +16,7 @@ import re
 import asyncio
 
 from pyrogram import filters, types
+from pyrogram.errors import FloodWait
 
 from HasiiMusic import tune, app, db, lang, queue, tg, yt
 from HasiiMusic.helpers import admin_check, buttons, can_manage_vc
@@ -150,7 +151,17 @@ async def _controls(_, query: types.CallbackQuery):
 
     try:
         if action in ["skip", "replay", "stop"]:
-            await query.message.reply_text(reply, quote=False)
+            try:
+                await query.message.reply_text(reply, quote=False)
+            except FloodWait as e:
+                # If FloodWait occurs, wait and retry once
+                await asyncio.sleep(e.value)
+                try:
+                    await query.message.reply_text(reply, quote=False)
+                except Exception:
+                    pass
+            except Exception:
+                pass
             await query.message.delete()
         else:
             mtext = re.sub(
@@ -165,7 +176,16 @@ async def _controls(_, query: types.CallbackQuery):
         await query.edit_message_text(
             f"{mtext}\n\n<blockquote>{reply}</blockquote>", reply_markup=keyboard
         )
-    except:
+    except FloodWait as e:
+        # Handle FloodWait on edit_message_text
+        await asyncio.sleep(e.value)
+        try:
+            await query.edit_message_text(
+                f"{mtext}\n\n<blockquote>{reply}</blockquote>", reply_markup=keyboard
+            )
+        except Exception:
+            pass
+    except Exception:
         pass
 
 
@@ -204,8 +224,6 @@ async def handle_seek(query: types.CallbackQuery, chat_id: int, action: str, use
     if new_time >= media.duration_sec - 5 and seconds > 0:
         return await query.answer(f"⏭️ ᴛᴏᴏ ᴄʟᴏꜱᴇ ᴛᴏ ᴛʜᴇ ᴇɴᴅ!", show_alert=True)
     
-    await query.answer(f"⏩ ꜱᴇᴇᴋɪɴɢ {label}...", show_alert=False)
-    
     # Perform seek
     success = await tune.seek_stream(chat_id, int(new_time))
     if success:
@@ -215,10 +233,21 @@ async def handle_seek(query: types.CallbackQuery, chat_id: int, action: str, use
             time_str = time_module.strftime('%H:%M:%S', time_module.gmtime(new_time))
         else:
             time_str = time_module.strftime('%M:%S', time_module.gmtime(new_time))
-        await query.message.reply_text(
-            f"✅ ꜱᴇᴇᴋᴇᴅ ᴛᴏ {time_str}\n\n<blockquote>ʙʏ {user}</blockquote>",
-            quote=False
-        )
+        
+        # Use callback answer to avoid FloodWait
+        await query.answer(f"✅ ꜱᴇᴇᴋᴇᴅ ᴛᴏ {time_str}", show_alert=True)
+        
+        # Try to send reply message with FloodWait handling
+        try:
+            await query.message.reply_text(
+                f"✅ ꜱᴇᴇᴋᴇᴅ ᴛᴏ {time_str}\n\n<blockquote>ʙʏ {user}</blockquote>",
+                quote=False
+            )
+        except FloodWait as e:
+            # If rate limited, just skip the message since user already got feedback via callback
+            pass
+        except Exception:
+            pass
 
 
 async def handle_loop(query: types.CallbackQuery, chat_id: int, user: str):
