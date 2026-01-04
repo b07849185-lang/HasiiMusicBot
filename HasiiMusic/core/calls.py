@@ -11,8 +11,10 @@
 # - Thumbnail updates during playback
 # ==============================================================================
 
+import asyncio
 import logging
 from ntgcalls import ConnectionNotFound, TelegramServerError
+from pyrogram import errors
 from pyrogram.errors import MessageIdInvalid
 from pyrogram.types import InputMediaPhoto, Message
 from pytgcalls import PyTgCalls, exceptions, types
@@ -32,6 +34,44 @@ logging.getLogger('pyrogram.dispatcher').addFilter(UpdateGroupCallFilter())
 class TgCall(PyTgCalls):
     def __init__(self):
         self.clients = []
+
+    async def _edit_media_with_retry(self, message: Message, media_obj: InputMediaPhoto, reply_markup):
+        """Edit media with basic FloodWait handling."""
+        try:
+            return await message.edit_media(media=media_obj, reply_markup=reply_markup)
+        except errors.FloodWait as fw:
+            await asyncio.sleep(fw.value + 1)
+            try:
+                return await message.edit_media(media=media_obj, reply_markup=reply_markup)
+            except Exception:
+                return None
+        except errors.MessageNotModified:
+            return None
+        except Exception:
+            return None
+
+    async def _send_photo_with_retry(self, chat_id: int, photo, caption: str, reply_markup):
+        """Send photo with FloodWait handling."""
+        try:
+            return await app.send_photo(
+                chat_id=chat_id,
+                photo=photo,
+                caption=caption,
+                reply_markup=reply_markup,
+            )
+        except errors.FloodWait as fw:
+            await asyncio.sleep(fw.value + 1)
+            try:
+                return await app.send_photo(
+                    chat_id=chat_id,
+                    photo=photo,
+                    caption=caption,
+                    reply_markup=reply_markup,
+                )
+            except Exception:
+                return None
+        except Exception:
+            return None
 
     async def pause(self, chat_id: int) -> bool:
         client = await db.get_assistant(chat_id)
@@ -138,21 +178,21 @@ class TgCall(PyTgCalls):
                     keyboard = buttons.controls(chat_id, timer=timer_text)
                 else:
                     keyboard = buttons.controls(chat_id)
-                try:
-                    await message.edit_media(
-                        media=InputMediaPhoto(
-                            media=_thumb,
-                            caption=text,
-                        ),
-                        reply_markup=keyboard,
-                    )
-                except MessageIdInvalid:
-                    media.message_id = (await app.send_photo(
+                updated = await self._edit_media_with_retry(
+                    message,
+                    InputMediaPhoto(media=_thumb, caption=text),
+                    keyboard,
+                )
+
+                if updated is None:
+                    sent_photo = await self._send_photo_with_retry(
                         chat_id=chat_id,
                         photo=_thumb,
                         caption=text,
                         reply_markup=keyboard,
-                    )).id
+                    )
+                    if sent_photo:
+                        media.message_id = sent_photo.id
         except FileNotFoundError:
             await message.edit_text(_lang["error_no_file"].format(config.SUPPORT_CHAT))
             await self.play_next(chat_id)
