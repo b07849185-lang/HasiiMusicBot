@@ -70,7 +70,7 @@
   "play_media": "<blockquote>🔴 <b>ᴛʜᴇ ʀᴇǫᴜᴇꜱᴛᴇᴅ ꜱᴛʀᴇᴀᴍ ꜱᴛᴀʀᴛᴇᴅ</b></blockquote>\n<blockquote>➤ <b>ᴛɪᴛʟᴇ :</b> <a href={0}>{1}</a>\n➤ <b>ᴅᴜʀᴀᴛɪᴏɴ :</b> {2} ᴍɪɴᴜᴛᴇꜱ\n➤ <b>ʀᴇǫᴜᴇꜱᴛᴇᴅ ʙʏ :</b> {3}</blockquote>",
   "play_log": "<blockquote><u>{0} ᴘʟᴀʏ ʟᴏɢ</u>\n\n<b>ᴄʜᴀᴛ:</b> <code>{1}</code> | {2}\n<b>ᴜꜱᴇʀ:</b> <code>{3}</code> | {4}\n<b>ᴍᴇꜱꜱᴀɢᴇ ʟɪɴᴋ:</b> {5}\n\n<b>ᴛɪᴛʟᴇ:</b> {6}\n<b>ᴅᴜʀᴀᴛɪᴏɴ:</b> {7} ᴍɪɴ</blockquote>",
   "play_queued": "<blockquote><u><b>ᴀᴅᴅᴇᴅ ᴛᴏ ǫᴜᴇᴜᴇ: {0} </b></u></blockquote>\n <blockquote><b>ᴛɪᴛʟᴇ:</b> <a href={1}>{2}</a>\n<b>ᴅᴜʀᴀᴛɪᴏɴ:</b> {3} ᴍɪɴ\n<b>ʀᴇǫᴜᴇꜱᴛᴇᴅ ʙʏ:</b> {4}</blockquote>",
-  "play_usage": "<blockquote><b>ᴜꜱᴀɢᴇ:</b>\n\n<code>/play ᴀᴛᴛᴇɴᴛɪᴏɴ</code></blockquote>",
+  "play_usage": "<blockquote><b>ᴜꜱᴀɢᴇ:</b> <code>/play [ꜱᴏɴɢ ɴᴀᴍᴇ/ʏᴏᴜᴛᴜʙᴇ ᴜʀʟ/ʀᴇᴘʟʏ ᴛᴏ ᴀ ᴀᴜᴅɪᴏ ꜰɪʟᴇ]</code></blockquote>",
   "play_seeking": "<blockquote>ꜱᴇᴇᴋɪɴɢ ᴛʜᴇ ᴄᴜʀʀᴇɴᴛ ꜱᴛʀᴇᴀᴍ...</blockquote>",
   "play_again": "<blockquote>ʀᴇᴘʟᴀʏɪɴɢ ᴛʜᴇ ᴄᴜʀʀᴇɴᴛ ᴍᴇᴅɪᴀ...</blockquote>",
   "play_now": "ᴘʟᴀʏ ɴᴏᴡ",
