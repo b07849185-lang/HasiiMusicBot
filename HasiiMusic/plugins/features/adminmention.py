@@ -19,6 +19,13 @@ from pyrogram import filters, types, enums
 from HasiiMusic import app
 
 
+# =============================================================================
+# CONFIGURATION: Add usernames here to exclude from admin mentions (without @)
+# =============================================================================
+EXCLUDED_USERNAMES = [
+    "Hasindu_Lakshan",
+]
+
 # Pattern to detect admin triggers
 TRIGGER_PATTERN = re.compile(r"(?i)(\.|@|\/)admin")
 
@@ -71,6 +78,10 @@ async def mention_admins(_, message: types.Message):
             if hasattr(admin, 'privileges') and admin.privileges:
                 if getattr(admin.privileges, 'is_anonymous', False):
                     continue
+
+            # Skip usernames in the excluded list
+            if user.username and user.username.lower() in [u.lower() for u in EXCLUDED_USERNAMES]:
+                continue
 
             # Add mention
             if user.username:
