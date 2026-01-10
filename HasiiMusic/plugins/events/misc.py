@@ -38,26 +38,29 @@ async def auto_leave():
                 left = 0
                 try:
                     for dialog in await ub.get_dialogs():
-                    chat_id = dialog.chat.id
-                    if left >= 20:
-                        break
-                    # Skip logger and any excluded chats
-                    excluded = [app.logger] + config.EXCLUDED_CHATS
-                    if chat_id in excluded:
-                        continue
-                    if dialog.chat.type in [
-                        enums.ChatType.GROUP,
-                        enums.ChatType.SUPERGROUP,
-                    ]:
-                        if chat_id in db.active_calls:
+                        chat_id = dialog.chat.id
+                        if left >= 20:
+                            break
+                        # Skip logger and any excluded chats
+                        excluded = [app.logger] + config.EXCLUDED_CHATS
+                        if chat_id in excluded:
                             continue
-                        await ub.leave_chat(chat_id)
-                        left += 1
-                    await asyncio.sleep(5)
-            except Exception as e:
-                logger.error(f"Auto-leave error for assistant {ub.me.username if hasattr(ub, 'me') and ub.me else 'Unknown'}: {e}")
-                continue
+                        if dialog.chat.type in [
+                            enums.ChatType.GROUP,
+                            enums.ChatType.SUPERGROUP,
+                        ]:
+                            if chat_id in db.active_calls:
+                                continue
+                            await ub.leave_chat(chat_id)
+                            left += 1
+                        await asyncio.sleep(5)
+                except Exception as e:
+                    logger.error(f"Auto-leave error for assistant {ub.me.username if hasattr(ub, 'me') and ub.me else 'Unknown'}: {e}")
+                    continue
         except Exception as e:
+            logger.error(f"Critical error in auto_leave task: {e}")
+            await asyncio.sleep(60)  # Wait before retrying
+            continue
             logger.error(f"Critical error in auto_leave task: {e}")
             await asyncio.sleep(60)  # Wait before retrying
             continue
