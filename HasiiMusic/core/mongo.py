@@ -18,6 +18,7 @@
 
 from random import randint
 from time import time
+import asyncio
 
 from pymongo import AsyncMongoClient
 
@@ -65,26 +66,35 @@ class MongoDB:
         self.usersdb = self.db.users
 
     async def connect(self) -> None:
-        """Check if we can connect to the database.
+        """Check if we can connect to the database with retry logic.
 
         Raises:
-            SystemExit: If the connection to the database fails.
+            SystemExit: If the connection to the database fails after retries.
         """
-        try:
-            start = time()
-            await self.mongo.admin.command("ping")
-            logger.info(
-                f"✅ Database connection successful. ({time() - start:.2f}s)")
+        max_retries = 3
+        retry_delay = 5  # seconds
+        
+        for attempt in range(1, max_retries + 1):
+            try:
+                start = time()
+                await self.mongo.admin.command("ping")
+                logger.info(
+                    f"✅ Database connection successful. ({time() - start:.2f}s)")
 
-            # Create indexes for faster queries
-            await self.authdb.create_index("_id")
-            await self.langdb.create_index("_id")
-            await self.cache.create_index("_id")
+                # Create indexes for faster queries
+                await self.authdb.create_index("_id")
+                await self.langdb.create_index("_id")
+                await self.cache.create_index("_id")
 
-            await self.load_cache()
-        except Exception as e:
-            raise SystemExit(
-                f"Database connection failed: {type(e).__name__}") from e
+                await self.load_cache()
+                return  # Success, exit the function
+            except Exception as e:
+                if attempt < max_retries:
+                    logger.warning(f"Database connection attempt {attempt}/{max_retries} failed: {type(e).__name__}. Retrying in {retry_delay}s...")
+                    await asyncio.sleep(retry_delay)
+                else:
+                    raise SystemExit(
+                        f"Database connection failed after {max_retries} attempts: {type(e).__name__}") from e
 
     async def close(self) -> None:
         """Close the connection to the database."""

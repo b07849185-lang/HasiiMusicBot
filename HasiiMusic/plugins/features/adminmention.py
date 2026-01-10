@@ -35,7 +35,8 @@ async def mention_admins(_, message: types.Message):
     """
     Mention all group admins when someone types @admin, .admin, or /admin
     """
-    # Extract the message without the trigger
+    try:
+        # Extract the message without the trigger
     message_text = message.text or message.caption or ""
     cleaned_text = TRIGGER_PATTERN.sub("", message_text).strip()
 
@@ -101,10 +102,16 @@ async def mention_admins(_, message: types.Message):
     else:
         reply_msg += "<i>No visible human admins found to mention.</i>"
 
-    # Send the reply
-    try:
-        await message.reply_text(reply_msg, disable_web_page_preview=True)
+        # Send the reply
+        try:
+            await message.reply_text(reply_msg, disable_web_page_preview=True)
+        except Exception as e:
+            await message.reply_text(
+                "<blockquote>❌ Failed to send admin notification.</blockquote>"
+            )
     except Exception as e:
-        await message.reply_text(
-            "<blockquote>❌ Failed to send admin notification.</blockquote>"
-        )
+        # Catch all exceptions to prevent bot crashes
+        try:
+            await message.reply_text("<blockquote>❌ An error occurred while processing admin mention.</blockquote>")
+        except:
+            pass  # Silent failure if reply fails

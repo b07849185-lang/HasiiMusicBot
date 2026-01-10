@@ -102,10 +102,22 @@ class Userbot(Client):
         """
         Asynchronously stops the assistants.
         """
-        if config.SESSION1:
-            await self.one.stop()
-        if config.SESSION2:
-            await self.two.stop()
-        if config.SESSION3:
-            await self.three.stop()
+        try:
+            if config.SESSION1 and hasattr(self.one, 'is_connected') and self.one.is_connected:
+                await self.one.stop()
+        except Exception as e:
+            logger.warning(f"Error stopping assistant 1: {e}")
+        
+        try:
+            if config.SESSION2 and hasattr(self.two, 'is_connected') and self.two.is_connected:
+                await self.two.stop()
+        except Exception as e:
+            logger.warning(f"Error stopping assistant 2: {e}")
+        
+        try:
+            if config.SESSION3 and hasattr(self.three, 'is_connected') and self.three.is_connected:
+                await self.three.stop()
+        except Exception as e:
+            logger.warning(f"Error stopping assistant 3: {e}")
+        
         logger.info("Assistants stopped.")

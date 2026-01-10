@@ -19,7 +19,7 @@ import time
 
 from pyrogram import enums, filters, types
 
-from HasiiMusic import tune, app, config, db, lang, queue, tasks, userbot, yt
+from HasiiMusic import tune, app, config, db, lang, logger, queue, tasks, userbot, yt
 from HasiiMusic.helpers import buttons
 
 
@@ -30,12 +30,14 @@ async def _watcher_vc(_, m: types.Message):
 
 
 async def auto_leave():
+    """Auto-leave inactive groups. Runs in background with error recovery."""
     while True:
-        await asyncio.sleep(1800)
-        for ub in userbot.clients:
-            left = 0
-            try:
-                for dialog in await ub.get_dialogs():
+        try:
+            await asyncio.sleep(1800)
+            for ub in userbot.clients:
+                left = 0
+                try:
+                    for dialog in await ub.get_dialogs():
                     chat_id = dialog.chat.id
                     if left >= 20:
                         break
@@ -55,13 +57,19 @@ async def auto_leave():
             except Exception as e:
                 logger.error(f"Auto-leave error for assistant {ub.me.username if hasattr(ub, 'me') and ub.me else 'Unknown'}: {e}")
                 continue
+        except Exception as e:
+            logger.error(f"Critical error in auto_leave task: {e}")
+            await asyncio.sleep(60)  # Wait before retrying
+            continue
 
 
 async def track_time():
+    """Track playback time. Runs in background with error recovery."""
     while True:
-        await asyncio.sleep(1)
-        for chat_id in db.active_calls:
-            try:
+        try:
+            await asyncio.sleep(1)
+            for chat_id in list(db.active_calls.keys()):  # Use list() to avoid dict size change errors
+                try:
                 if not await db.playing(chat_id):
                     continue
                 media = queue.get_current(chat_id)
@@ -73,8 +81,12 @@ async def track_time():
                 media.time += 1
             except Exception as e:
                 # Log error but continue tracking other chats
-                print(f"track_time error for chat {chat_id}: {e}")
+                logger.debug(f"track_time error for chat {chat_id}: {e}")
                 continue
+        except Exception as e:
+            logger.error(f"Critical error in track_time task: {e}")
+            await asyncio.sleep(1)  # Brief pause before retrying
+            continue
 
 
 async def update_timer(length=10):

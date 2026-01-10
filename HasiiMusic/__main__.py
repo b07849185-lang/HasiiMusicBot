@@ -51,7 +51,10 @@ async def main():
     logger.info("\n🎉 Bot started successfully! Ready to play music! 🎵\n")
 
     # Step 8: Keep the bot running (press Ctrl+C to stop)
-    await idle()
+    try:
+        await idle()
+    except Exception as e:
+        logger.error(f"Error during idle: {e}")
     
     # Step 9: Cleanup and shutdown when bot is stopped
     await stop()
@@ -59,7 +62,8 @@ async def main():
 
 if __name__ == "__main__":
     try:
-        asyncio.get_event_loop().run_until_complete(main())
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(main())
     except KeyboardInterrupt:
         logger.info("Bot stopped by user (Ctrl+C)")
     except SystemExit as e:
@@ -67,4 +71,11 @@ if __name__ == "__main__":
         raise
     except Exception as e:
         logger.error(f"Unexpected error caused bot to stop: {e}", exc_info=True)
-        raise
+        # Don't raise - allow clean shutdown
+    finally:
+        # Ensure cleanup happens
+        try:
+            if loop.is_running():
+                loop.stop()
+        except:
+            pass
