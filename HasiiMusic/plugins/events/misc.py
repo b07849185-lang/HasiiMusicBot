@@ -68,16 +68,13 @@ async def track_time():
     while True:
         try:
             await asyncio.sleep(1)
-            for chat_id in list(db.active_calls.keys()):  # Use list() to avoid dict size change errors
+            for chat_id in list(db.active_calls):
                 try:
                     if not await db.playing(chat_id):
                         continue
                     media = queue.get_current(chat_id)
                     if not media:
                         continue
-                    # Ensure media.time is initialized
-                    if not hasattr(media, 'time') or media.time is None:
-                        media.time = 0
                     media.time += 1
                 except Exception as e:
                     # Log error but continue tracking other chats

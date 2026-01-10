@@ -2,6 +2,7 @@
 # requirements.txt - Python Dependencies
 # ==============================================================================
 # This file lists all Python packages required for HasiiMusicBot.
+# Updated from source: AnonymousX1025/AnonXMusic
 # 
 # Installation:
 #   pip install -r requirements.txt
@@ -19,13 +20,13 @@
 # - yt-dlp: YouTube video/audio downloader
 # ==============================================================================
 
-aiohttp~=3.13.1
-kurigram>=2.2.13
+aiohttp~=3.13.2
+kurigram~=2.2.17
 pillow~=12.0.0
-psutil~=7.1.2
-pymongo>=4.15.3
-pytgcrypto>=1.2.11
+psutil~=7.2.1
+pymongo~=4.15.5
+pytgcrypto~=1.2.11
 py-tgcalls~=2.2.8
-py-yt-search~=0.5.1
-python-dotenv~=1.1.1
-yt-dlp[default]>=2025.12.08
+py-yt-search~=0.5.5
+python-dotenv~=1.2.1
+yt-dlp[default]~=2025.12.8
