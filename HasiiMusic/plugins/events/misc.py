@@ -61,9 +61,6 @@ async def auto_leave():
             logger.error(f"Critical error in auto_leave task: {e}")
             await asyncio.sleep(60)  # Wait before retrying
             continue
-            logger.error(f"Critical error in auto_leave task: {e}")
-            await asyncio.sleep(60)  # Wait before retrying
-            continue
 
 
 async def track_time():
@@ -73,19 +70,19 @@ async def track_time():
             await asyncio.sleep(1)
             for chat_id in list(db.active_calls.keys()):  # Use list() to avoid dict size change errors
                 try:
-                if not await db.playing(chat_id):
+                    if not await db.playing(chat_id):
+                        continue
+                    media = queue.get_current(chat_id)
+                    if not media:
+                        continue
+                    # Ensure media.time is initialized
+                    if not hasattr(media, 'time') or media.time is None:
+                        media.time = 0
+                    media.time += 1
+                except Exception as e:
+                    # Log error but continue tracking other chats
+                    logger.debug(f"track_time error for chat {chat_id}: {e}")
                     continue
-                media = queue.get_current(chat_id)
-                if not media:
-                    continue
-                # Ensure media.time is initialized
-                if not hasattr(media, 'time') or media.time is None:
-                    media.time = 0
-                media.time += 1
-            except Exception as e:
-                # Log error but continue tracking other chats
-                logger.debug(f"track_time error for chat {chat_id}: {e}")
-                continue
         except Exception as e:
             logger.error(f"Critical error in track_time task: {e}")
             await asyncio.sleep(1)  # Brief pause before retrying
