@@ -93,6 +93,8 @@ class TgCall(PyTgCalls):
 
         try:
             await client.leave_call(chat_id, close=False)
+            # Small delay to let group call state stabilize after leaving
+            await asyncio.sleep(0.5)
         except (ConnectionNotFound, exceptions.NotInCallError):
             # Expected: userbot is not in a call
             pass
@@ -133,12 +135,37 @@ class TgCall(PyTgCalls):
             video_flags=types.MediaStream.Flags.REQUIRED if video else types.MediaStream.Flags.IGNORE,
             ffmpeg_parameters=f"-ss {seek_time}" if seek_time > 1 else None,
         )
+        
+        # Retry logic for race conditions when stopping/starting quickly
+        max_retries = 3
+        retry_delay = 1  # seconds
+        
         try:
-            await client.play(
-                chat_id=chat_id,
-                stream=stream,
-                config=types.GroupCallConfig(auto_start=False),
-            )
+            for attempt in range(max_retries):
+                try:
+                    await client.play(
+                        chat_id=chat_id,
+                        stream=stream,
+                        config=types.GroupCallConfig(auto_start=False),
+                    )
+                    # Success - break retry loop
+                    break
+                except (exceptions.NoActiveGroupCall, errors.RPCError) as e:
+                    error_msg = str(e)
+                    # Check if it's a group call state error
+                    if "GROUPCALL_INVALID" in error_msg or "GROUPCALL" in error_msg or isinstance(e, exceptions.NoActiveGroupCall):
+                        if attempt < max_retries - 1:
+                            # Wait for group call state to stabilize
+                            logger.info(f"Group call transitioning for {chat_id}, retrying in {retry_delay}s... (attempt {attempt + 1}/{max_retries})")
+                            await asyncio.sleep(retry_delay)
+                            continue
+                        else:
+                            # Final attempt failed
+                            raise
+                    else:
+                        # Different error, don't retry
+                        raise
+                
             # Initialize media.time based on seek position
             if seek_time:
                 media.time = seek_time
@@ -202,6 +229,14 @@ class TgCall(PyTgCalls):
         except exceptions.NoActiveGroupCall:
             await self.stop(chat_id)
             await message.edit_text(_lang["error_no_call"])
+        except errors.RPCError as e:
+            # Handle Telegram API errors (GROUPCALL_INVALID, etc.)
+            if "GROUPCALL_INVALID" in str(e) or "GROUPCALL" in str(e):
+                await self.stop(chat_id)
+                await message.edit_text(_lang["error_no_call"])
+            else:
+                # Re-raise if it's a different RPC error
+                raise
         except exceptions.NoAudioSourceFound:
             error_msg = _lang["error_no_video"] if video else _lang["error_no_audio"]
             await message.edit_text(error_msg)
