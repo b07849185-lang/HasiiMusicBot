@@ -24,6 +24,7 @@ from HasiiMusic import app
 # =============================================================================
 EXCLUDED_USERNAMES = [
     "Hasindu_Lakshan",
+    "@Itz_Me_Rana_o_O"
 ]
 
 # Pattern to detect admin triggers
