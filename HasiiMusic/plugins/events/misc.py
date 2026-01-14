@@ -163,9 +163,14 @@ async def update_timer(length=10):
                     "MESSAGE_NOT_MODIFIED",
                     "MESSAGE_ID_INVALID",
                     "MESSAGE_DELETE",
-                    "CHAT_ADMIN_REQUIRED"
+                    "CHAT_ADMIN_REQUIRED",
+                    "CHANNEL_PRIVATE",
+                    "haven't joined this channel"
                 ]):
                     print(f"update_timer error for chat {chat_id}: {e}")
+                # Stop tracking chats with CHANNEL_PRIVATE errors
+                if "CHANNEL_PRIVATE" in error_str:
+                    break
                 await asyncio.sleep(1)  # Brief pause before retry
 
     # Monitor and spawn individual chat timers
@@ -243,10 +248,15 @@ async def vc_watcher(sleep=15):
                             try:
                                 await client.leave_call(chat_id, close=False)
                             except Exception as e:
-                                # Suppress "No active group call" errors
-                                error_msg = str(e)
-                                if ("No active group call" not in error_msg and
-                                    "not in the group call" not in error_msg.lower()):
+                                # Suppress expected call disconnection errors
+                                error_msg = str(e).lower()
+                                if not any(ignore in error_msg for ignore in [
+                                    "not in a call",
+                                    "not in the group call",
+                                    "no active group call",
+                                    "call was already stopped",
+                                    "call already disconnected"
+                                ]):
                                     print(f"Error leaving call for {chat_id}: {e}")
                             alone_times.pop(chat_id, None)
                 else:
