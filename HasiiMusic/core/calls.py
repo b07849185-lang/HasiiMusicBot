@@ -114,7 +114,7 @@ class TgCall(PyTgCalls):
     async def play_media(
         self,
         chat_id: int,
-        message: Message,
+        message: Message | None,
         media: Media | Track,
         seek_time: int = 0,
         video: bool = False,
@@ -128,7 +128,11 @@ class TgCall(PyTgCalls):
         )
 
         if not media.file_path:
-            return await message.edit_text(_lang["error_no_file"].format(config.SUPPORT_CHAT))
+            if message:
+                return await message.edit_text(_lang["error_no_file"].format(config.SUPPORT_CHAT))
+            else:
+                logger.error(f"No file path for media in {chat_id}")
+                return
 
         # Configure stream based on video or audio mode
         stream = types.MediaStream(
@@ -212,13 +216,25 @@ class TgCall(PyTgCalls):
                     keyboard = buttons.controls(chat_id, timer=timer_text)
                 else:
                     keyboard = buttons.controls(chat_id)
-                updated = await self._edit_media_with_retry(
-                    message,
-                    InputMediaPhoto(media=_thumb, caption=text),
-                    keyboard,
-                )
+                
+                if message:
+                    updated = await self._edit_media_with_retry(
+                        message,
+                        InputMediaPhoto(media=_thumb, caption=text),
+                        keyboard,
+                    )
 
-                if updated is None:
+                    if updated is None:
+                        sent_photo = await self._send_photo_with_retry(
+                            chat_id=chat_id,
+                            photo=_thumb,
+                            caption=text,
+                            reply_markup=keyboard,
+                        )
+                        if sent_photo:
+                            media.message_id = sent_photo.id
+                else:
+                    # No message to edit, just send new one
                     sent_photo = await self._send_photo_with_retry(
                         chat_id=chat_id,
                         photo=_thumb,
@@ -228,58 +244,65 @@ class TgCall(PyTgCalls):
                     if sent_photo:
                         media.message_id = sent_photo.id
         except FileNotFoundError:
-            try:
-                await message.edit_text(_lang["error_no_file"].format(config.SUPPORT_CHAT))
-            except Exception:
-                pass
+            if message:
+                try:
+                    await message.edit_text(_lang["error_no_file"].format(config.SUPPORT_CHAT))
+                except Exception:
+                    pass
             await self.play_next(chat_id)
         except exceptions.NoActiveGroupCall:
             await self.stop(chat_id)
-            try:
-                await message.edit_text(_lang["error_no_call"])
-            except Exception:
-                pass
+            if message:
+                try:
+                    await message.edit_text(_lang["error_no_call"])
+                except Exception:
+                    pass
         except errors.RPCError as e:
             # Handle Telegram API errors (GROUPCALL_INVALID, CHAT_ADMIN_REQUIRED, etc.)
             error_str = str(e)
             if "CHAT_ADMIN_REQUIRED" in error_str or "phone.CreateGroupCall" in error_str:
                 # Voice chat is disabled or assistant doesn't have admin permissions
                 await self.stop(chat_id)
-                try:
-                    await message.edit_text(_lang.get("error_vc_disabled", _lang["error_no_call"]))
-                except Exception:
-                    pass
+                if message:
+                    try:
+                        await message.edit_text(_lang.get("error_vc_disabled", _lang["error_no_call"]))
+                    except Exception:
+                        pass
             elif "GROUPCALL_INVALID" in error_str or "GROUPCALL" in error_str:
                 await self.stop(chat_id)
-                try:
-                    await message.edit_text(_lang["error_no_call"])
-                except Exception:
-                    pass
+                if message:
+                    try:
+                        await message.edit_text(_lang["error_no_call"])
+                    except Exception:
+                        pass
             else:
                 # Log but don't crash for other RPC errors
                 logger.error(f"RPC error in play_media for {chat_id}: {e}")
                 await self.stop(chat_id)
         except exceptions.NoAudioSourceFound:
             error_msg = _lang["error_no_video"] if video else _lang["error_no_audio"]
-            try:
-                await message.edit_text(error_msg)
-            except Exception:
-                pass
+            if message:
+                try:
+                    await message.edit_text(error_msg)
+                except Exception:
+                    pass
             await self.play_next(chat_id)
         except (ConnectionNotFound, TelegramServerError):
             await self.stop(chat_id)
-            try:
-                await message.edit_text(_lang["error_tg_server"])
-            except Exception:
-                pass
+            if message:
+                try:
+                    await message.edit_text(_lang["error_tg_server"])
+                except Exception:
+                    pass
         except Exception as e:
             # Catch all other exceptions to prevent bot crash
             logger.error(f"Unexpected error in play_media for {chat_id}: {e}", exc_info=True)
             await self.stop(chat_id)
-            try:
-                await message.edit_text(f"❌ Playback error: {str(e)[:100]}")
-            except Exception:
-                pass
+            if message:
+                try:
+                    await message.edit_text(f"❌ Playback error: {str(e)[:100]}")
+                except Exception:
+                    pass
 
     async def replay(self, chat_id: int) -> None:
         try:
@@ -375,7 +398,22 @@ class TgCall(PyTgCalls):
                 return await self.stop(chat_id)
 
             _lang = await lang.get_lang(chat_id)
-            msg = await app.send_message(chat_id=chat_id, text=_lang["play_next"])
+            # Send message with FloodWait handling
+            try:
+                msg = await app.send_message(chat_id=chat_id, text=_lang["play_next"])
+            except errors.FloodWait as fw:
+                logger.warning(f"FloodWait in play_next for {chat_id}: waiting {fw.value}s")
+                await asyncio.sleep(fw.value + 1)
+                try:
+                    msg = await app.send_message(chat_id=chat_id, text=_lang["play_next"])
+                except Exception as e:
+                    logger.error(f"Failed to send play_next message after FloodWait for {chat_id}: {e}")
+                    # Continue without message - don't let this stop playback
+                    msg = None
+            except Exception as e:
+                logger.error(f"Failed to send play_next message for {chat_id}: {e}")
+                msg = None
+            
             if not media.file_path:
                 is_live = getattr(media, 'is_live', False)
                 is_video = getattr(media, 'video', False)
@@ -390,9 +428,15 @@ class TgCall(PyTgCalls):
                         pass
                     return
 
-            media.message_id = msg.id
+            media.message_id = msg.id if msg else 0
             is_video = getattr(media, 'video', False)
-            await self.play_media(chat_id, msg, media, video=is_video)
+            if msg:
+                await self.play_media(chat_id, msg, media, video=is_video)
+            else:
+                # No message object due to errors, but continue playback
+                # Create a temporary message or handle without UI update
+                logger.info(f"Playing next track for {chat_id} without message update")
+                await self.play_media(chat_id, None, media, video=is_video)
         except Exception as e:
             logger.error(f"Error in play_next for {chat_id}: {e}", exc_info=True)
             # Try to stop the call gracefully

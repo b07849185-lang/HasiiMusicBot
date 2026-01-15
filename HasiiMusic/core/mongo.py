@@ -19,10 +19,25 @@
 from random import randint
 from time import time
 import asyncio
+import logging
 
 from pymongo import AsyncMongoClient
 
 from HasiiMusic import config, logger, userbot
+
+
+# Suppress non-critical MongoDB background task errors
+class MongoBackgroundFilter(logging.Filter):
+    def filter(self, record):
+        # Suppress AutoReconnect and _OperationCancelled background errors (these are handled internally)
+        msg = record.getMessage()
+        return not (
+            'MongoClient background task encountered an error' in msg or
+            ('AutoReconnect' in msg and 'background task' in msg) or
+            ('_OperationCancelled' in msg and 'background task' in msg)
+        )
+
+logging.getLogger('pymongo.client').addFilter(MongoBackgroundFilter())
 
 
 class MongoDB:
@@ -33,9 +48,14 @@ class MongoDB:
         self.mongo = AsyncMongoClient(
             config.MONGO_URL,
             serverSelectionTimeoutMS=12500,
-            maxPoolSize=50,  # Increase connection pool
+            connectTimeoutMS=20000,
+            socketTimeoutMS=20000,
+            maxPoolSize=50,
             minPoolSize=10,
-            maxIdleTimeMS=30000
+            maxIdleTimeMS=45000,
+            waitQueueTimeoutMS=10000,
+            retryWrites=True,
+            retryReads=True
         )
         self.db = self.mongo.HasiiTune
 
