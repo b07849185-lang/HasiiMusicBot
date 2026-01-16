@@ -34,6 +34,7 @@ logging.getLogger('pyrogram.dispatcher').addFilter(UpdateGroupCallFilter())
 class TgCall(PyTgCalls):
     def __init__(self):
         self.clients = []
+        self._play_next_locks = {}  # Lock to prevent concurrent play_next calls per chat
 
     async def _edit_media_with_retry(self, message: Message, media_obj: InputMediaPhoto, reply_markup):
         """Edit media with basic FloodWait handling."""
@@ -347,103 +348,114 @@ class TgCall(PyTgCalls):
             return False
 
     async def play_next(self, chat_id: int) -> None:
-        try:
-            if not await db.get_call(chat_id):
-                return
-
-            # Check loop mode
-            loop_mode = await db.get_loop(chat_id)
-            
-            if loop_mode == 1:
-                # Single track loop - replay current track
-                media = queue.get_current(chat_id)
-                if media:
-                    _lang = await lang.get_lang(chat_id)
-                    msg = await app.send_message(chat_id=chat_id, text=_lang["play_again"])
-                    is_video = getattr(media, 'video', False)
-                    await self.play_media(chat_id, msg, media, video=is_video)
+        # Acquire lock for this chat to prevent concurrent execution
+        if chat_id not in self._play_next_locks:
+            self._play_next_locks[chat_id] = asyncio.Lock()
+        
+        # If already processing play_next for this chat, return immediately
+        if self._play_next_locks[chat_id].locked():
+            logger.info(f"play_next already running for {chat_id}, skipping duplicate call")
+            return
+        
+        async with self._play_next_locks[chat_id]:
+            try:
+                if not await db.get_call(chat_id):
                     return
-            
-            media = queue.get_next(chat_id)
-            
-            # If queue loop and no more tracks, start from beginning
-            if not media and loop_mode == 10:
-                all_items = queue.get_all(chat_id)
-                if all_items:
-                    # Reset queue to beginning
-                    first_track = all_items[0]
-                    _lang = await lang.get_lang(chat_id)
-                    msg = await app.send_message(chat_id=chat_id, text="🔁 Looping queue...")
-                    if not first_track.file_path:
-                        is_live = getattr(first_track, 'is_live', False)
+
+                # Check loop mode
+                loop_mode = await db.get_loop(chat_id)
+                
+                if loop_mode == 1:
+                    # Single track loop - replay current track
+                    media = queue.get_current(chat_id)
+                    if media:
+                        _lang = await lang.get_lang(chat_id)
+                        msg = await app.send_message(chat_id=chat_id, text=_lang["play_again"])
+                        is_video = getattr(media, 'video', False)
+                        await self.play_media(chat_id, msg, media, video=is_video)
+                        return
+                
+                media = queue.get_next(chat_id)
+                
+                # If queue loop and no more tracks, start from beginning
+                if not media and loop_mode == 10:
+                    all_items = queue.get_all(chat_id)
+                    if all_items:
+                        # Reset queue to beginning
+                        first_track = all_items[0]
+                        _lang = await lang.get_lang(chat_id)
+                        msg = await app.send_message(chat_id=chat_id, text="🔁 Looping queue...")
+                        if not first_track.file_path:
+                            is_live = getattr(first_track, 'is_live', False)
+                            is_video = getattr(first_track, 'video', False)
+                            first_track.file_path = await yt.download(first_track.id, video=is_video, is_live=is_live)
+                        first_track.message_id = msg.id
                         is_video = getattr(first_track, 'video', False)
-                        first_track.file_path = await yt.download(first_track.id, video=is_video, is_live=is_live)
-                    first_track.message_id = msg.id
-                    is_video = getattr(first_track, 'video', False)
-                    await self.play_media(chat_id, msg, first_track, video=is_video)
-                    return
-            
-            try:
-                if media and media.message_id:
-                    await app.delete_messages(
-                        chat_id=chat_id,
-                        message_ids=media.message_id,
-                        revoke=True,
-                    )
-                    media.message_id = 0
-            except Exception as e:
-                logger.debug(f"Could not delete previous message in {chat_id}: {e}")
+                        await self.play_media(chat_id, msg, first_track, video=is_video)
+                        return
+                
+                try:
+                    if media and media.message_id:
+                        await app.delete_messages(
+                            chat_id=chat_id,
+                            message_ids=media.message_id,
+                            revoke=True,
+                        )
+                        media.message_id = 0
+                except Exception as e:
+                    logger.debug(f"Could not delete previous message in {chat_id}: {e}")
 
-            if not media:
-                return await self.stop(chat_id)
+                if not media:
+                    return await self.stop(chat_id)
 
-            _lang = await lang.get_lang(chat_id)
-            # Send message with FloodWait handling
-            try:
-                msg = await app.send_message(chat_id=chat_id, text=_lang["play_next"])
-            except errors.FloodWait as fw:
-                logger.warning(f"FloodWait in play_next for {chat_id}: waiting {fw.value}s")
-                await asyncio.sleep(fw.value + 1)
+                _lang = await lang.get_lang(chat_id)
+                # Send message with FloodWait handling
                 try:
                     msg = await app.send_message(chat_id=chat_id, text=_lang["play_next"])
-                except Exception as e:
-                    logger.error(f"Failed to send play_next message after FloodWait for {chat_id}: {e}")
-                    # Continue without message - don't let this stop playback
-                    msg = None
-            except Exception as e:
-                logger.error(f"Failed to send play_next message for {chat_id}: {e}")
-                msg = None
-            
-            if not media.file_path:
-                is_live = getattr(media, 'is_live', False)
-                is_video = getattr(media, 'video', False)
-                media.file_path = await yt.download(media.id, video=is_video, is_live=is_live)
-                if not media.file_path:
-                    await self.stop(chat_id)
+                except errors.FloodWait as fw:
+                    logger.warning(f"FloodWait in play_next for {chat_id}: waiting {fw.value}s")
+                    await asyncio.sleep(fw.value + 1)
                     try:
-                        await msg.edit_text(
-                            _lang["error_no_file"].format(config.SUPPORT_CHAT)
-                        )
-                    except Exception:
-                        pass
-                    return
+                        msg = await app.send_message(chat_id=chat_id, text=_lang["play_next"])
+                    except Exception as e:
+                        logger.error(f"Failed to send play_next message after FloodWait for {chat_id}: {e}")
+                        # Continue without message - don't let this stop playback
+                        msg = None
+                except Exception as e:
+                    logger.error(f"Failed to send play_next message for {chat_id}: {e}")
+                    msg = None
+                
+                if not media.file_path:
+                    is_live = getattr(media, 'is_live', False)
+                    is_video = getattr(media, 'video', False)
+                    media.file_path = await yt.download(media.id, video=is_video, is_live=is_live)
+                    if not media.file_path:
+                        await self.stop(chat_id)
+                        if msg:
+                            try:
+                                await msg.edit_text(
+                                    _lang["error_no_file"].format(config.SUPPORT_CHAT)
+                                )
+                            except Exception:
+                                pass
+                        return
 
-            media.message_id = msg.id if msg else 0
-            is_video = getattr(media, 'video', False)
-            if msg:
-                await self.play_media(chat_id, msg, media, video=is_video)
-            else:
-                # No message object due to errors, but continue playback
-                # Create a temporary message or handle without UI update
-                logger.info(f"Playing next track for {chat_id} without message update")
-                await self.play_media(chat_id, None, media, video=is_video)
-        except Exception as e:
-            logger.error(f"Error in play_next for {chat_id}: {e}", exc_info=True)
-            # Try to stop the call gracefully
-            try:
-                await self.stop(chat_id)
-            except Exception:
-                pass
+                media.message_id = msg.id if msg else 0
+                is_video = getattr(media, 'video', False)
+                if msg:
+                    await self.play_media(chat_id, msg, media, video=is_video)
+                else:
+                    # No message object due to errors, but continue playback
+                    # Create a temporary message or handle without UI update
+                    logger.info(f"Playing next track for {chat_id} without message update")
+                    await self.play_media(chat_id, None, media, video=is_video)
+            except Exception as e:
+                logger.error(f"Error in play_next for {chat_id}: {e}", exc_info=True)
+                # Try to stop the call gracefully
+                try:
+                    await self.stop(chat_id)
+                except Exception:
+                    pass
 
     async def ping(self) -> float:
         pings = [client.ping for client in self.clients]
