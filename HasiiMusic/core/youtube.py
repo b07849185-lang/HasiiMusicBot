@@ -194,25 +194,74 @@ class YouTube:
     async def download(self, video_id: str, video: bool = False, is_live: bool = False) -> Optional[str]:
         url = self.base + video_id
 
-        # For live streams, extract the direct stream URL using yt-dlp with cookies
+        # For live VIDEO streams, download instead of streaming to avoid HLS manifest issues
+        # Audio live streams can still use direct URLs
+        if is_live and video:
+            logger.info(f"Downloading live video stream {video_id} to temporary file...")
+            ext = "mp4"
+            filename = f"downloads/{video_id}_live.{ext}"
+            
+            # Check if already downloaded
+            if os.path.exists(filename):
+                return filename
+            
+            cookie = self.get_cookies()
+            ydl_opts = {
+                "quiet": True,
+                "no_warnings": True,
+                "cookiefile": cookie,
+                "outtmpl": filename,
+                "format": "best[height<=720][ext=mp4]/best[height<=480][ext=mp4]/best",
+                "live_from_start": False,  # Start from current time, not beginning
+                "external_downloader": "ffmpeg",
+                "external_downloader_args": ["-t", "300"],  # Download max 5 minutes
+            }
+            
+            def _download():
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    try:
+                        ydl.download([url])
+                        return filename if os.path.exists(filename) else None
+                    except Exception as ex:
+                        logger.error(f"Live video download failed: {ex}")
+                        return None
+            
+            result = await asyncio.to_thread(_download)
+            return result
+
+        # For live AUDIO streams, extract the direct stream URL using yt-dlp with cookies
         if is_live:
             cookie = self.get_cookies()
             ydl_opts = {
                 "quiet": True,
                 "no_warnings": True,
                 "cookiefile": cookie,
-                # For live streams: use specific format codes that PyTgCalls can handle
-                # Video formats: 96 (1080p), 95 (720p), 94 (480p) + 140 (audio)
-                # Force direct URL extraction instead of manifest
-                "format": "95+140/94+140/96+140/best" if video else "bestaudio/best",
-                "format_sort": ["proto:https"],  # Prefer HTTPS
+                # For live video streams: Extract the BEST direct stream URL
+                # Use format that provides direct URLs, not HLS manifests
+                "format": "best[ext=mp4][protocol!=m3u8]/best[protocol!=m3u8]/best" if video else "bestaudio/best",
+                "youtube_include_dash_manifest": False,  # Disable DASH manifest
+                "youtube_include_hls_manifest": False,   # Disable HLS manifest
             }
 
             def _extract_url():
                 with yt_dlp.YoutubeDL(ydl_opts) as ydl:
                     try:
                         info = ydl.extract_info(url, download=False)
-                        return info.get("url") or info.get("manifest_url")
+                        # Get the direct URL, not manifest URL
+                        direct_url = info.get("url")
+                        
+                        # If URL is still a manifest (.m3u8), try to get formats list
+                        if direct_url and ".m3u8" in direct_url and video:
+                            # Try to extract direct video URL from formats
+                            formats = info.get("formats", [])
+                            for fmt in formats:
+                                fmt_url = fmt.get("url", "")
+                                # Skip manifest URLs, find direct stream URLs
+                                if fmt_url and ".m3u8" not in fmt_url and fmt.get("vcodec") != "none":
+                                    direct_url = fmt_url
+                                    break
+                        
+                        return direct_url or info.get("manifest_url")
                     except yt_dlp.utils.ExtractorError as ex:
                         error_msg = str(ex)
                         if "Sign in to confirm" in error_msg or "bot" in error_msg.lower():
