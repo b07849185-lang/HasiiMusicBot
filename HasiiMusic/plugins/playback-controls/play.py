@@ -150,7 +150,7 @@ async def play_hndlr(
             tracks.remove(file)
             file.message_id = sent.id
         else:
-            file = await yt.search(url, sent.id, video=video)
+            file = await yt.search(url, sent.id)
 
         if not file:
             await safe_edit(
@@ -161,7 +161,7 @@ async def play_hndlr(
 
     elif len(m.command) >= 2:
         query = " ".join(m.command[1:])
-        file = await yt.search(query, sent.id, video=video)
+        file = await yt.search(query, sent.id)
         if not file:
             await safe_edit(
                 sent,
