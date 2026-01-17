@@ -96,9 +96,9 @@ class YouTube:
             return link.split("&si")[0].split("?si")[0]
         return None
 
-    async def search(self, query: str, m_id: int, video: bool = False) -> Track | None:
+    async def search(self, query: str, m_id: int) -> Track | None:
         # Check cache first (10-minute TTL)
-        cache_key = f"{query}_{video}"
+        cache_key = query
         current_time = asyncio.get_event_loop().time()
 
         if cache_key in self.search_cache:
@@ -126,7 +126,6 @@ class YouTube:
                     "thumbnails", [{}])[-1].get("url").split("?")[0],
                 url=data.get("link"),
                 view_count=data.get("viewCount", {}).get("short"),
-                video=video,
                 is_live=is_live,
             )
 
@@ -141,7 +140,7 @@ class YouTube:
             return track
         return None
 
-    async def playlist(self, limit: int, user: str, url: str, video: bool) -> list[Track]:
+    async def playlist(self, limit: int, user: str, url: str) -> list[Track]:
         try:
             plist = await Playlist.get(url)
             tracks = []
@@ -175,7 +174,6 @@ class YouTube:
                         url=link,
                         user=user,
                         view_count="",
-                        video=video,
                     )
                     tracks.append(track)
                 except Exception as e:
@@ -209,20 +207,6 @@ class YouTube:
                     try:
                         info = ydl.extract_info(url, download=False)
                         return info.get("url") or info.get("manifest_url")
-                        direct_url = info.get("url")
-                        
-                        # If URL is still a manifest (.m3u8), try to get formats list
-                        if direct_url and ".m3u8" in direct_url and video:
-                            # Try to extract direct video URL from formats
-                            formats = info.get("formats", [])
-                            for fmt in formats:
-                                fmt_url = fmt.get("url", "")
-                                # Skip manifest URLs, find direct stream URLs
-                                if fmt_url and ".m3u8" not in fmt_url and fmt.get("vcodec") != "none":
-                                    direct_url = fmt_url
-                                    break
-                        
-                        return direct_url or info.get("manifest_url")
                     except yt_dlp.utils.ExtractorError as ex:
                         error_msg = str(ex)
                         if "Sign in to confirm" in error_msg or "bot" in error_msg.lower():

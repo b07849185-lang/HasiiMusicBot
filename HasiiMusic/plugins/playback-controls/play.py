@@ -131,7 +131,7 @@ async def play_hndlr(
             await safe_edit(sent, m.lang["playlist_fetch"])
             try:
                 tracks = await yt.playlist(
-                    config.PLAYLIST_LIMIT, mention, url, False
+                    config.PLAYLIST_LIMIT, mention, url
                 )
             except Exception as e:
                 await safe_edit(

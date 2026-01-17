@@ -311,8 +311,7 @@ class TgCall(PyTgCalls):
             media = queue.get_current(chat_id)
             _lang = await lang.get_lang(chat_id)
             msg = await app.send_message(chat_id=chat_id, text=_lang["play_again"])
-            is_video = getattr(media, 'video', False)
-            await self.play_media(chat_id, msg, media, video=is_video)
+            await self.play_media(chat_id, msg, media)
         except Exception as e:
             logger.error(f"Error in replay for {chat_id}: {e}", exc_info=True)
 

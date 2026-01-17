@@ -132,7 +132,6 @@ class Telegram:
                 message_id=sent.id,
                 url=msg.link,
                 title=file_title[:25],
-                video=is_video,  # True if video file detected
             )
         except asyncio.CancelledError:
             return await sent.stop_propagation()
