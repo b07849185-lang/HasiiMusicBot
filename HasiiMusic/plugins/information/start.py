@@ -8,7 +8,7 @@
 # - New member detection (when bot joins a group)
 # ==============================================================================
 
-from pyrogram import enums, filters, types
+from pyrogram import enums, errors, filters, types
 
 from HasiiMusic import app, config, db, lang
 from HasiiMusic.helpers import buttons, utils
