@@ -39,6 +39,10 @@ def admin_check(func):
             else:
                 return await update.answer(text, show_alert=True)
 
+        # Handle anonymous admins (from_user is None)
+        if not update.from_user:
+            return
+
         # Get chat ID and user ID from update
         chat_id = (
             update.chat.id

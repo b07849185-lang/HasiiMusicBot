@@ -58,14 +58,31 @@ class YouTube:
 
     async def save_cookies(self, urls: list[str]) -> None:
         logger.info("🍪 Saving cookies from urls...")
+        saved_count = 0
         for url in urls:
-            path = f"HasiiMusic/cookies/cookie{random.randint(10000, 99999)}.txt"
-            link = url.replace("me/", "me/raw/")
-            async with aiohttp.ClientSession() as session:
-                async with session.get(link) as resp:
-                    with open(path, "wb") as fw:
-                        fw.write(await resp.read())
-        logger.info("✅ Cookies saved.")
+            try:
+                path = f"HasiiMusic/cookies/cookie{random.randint(10000, 99999)}.txt"
+                link = url.replace("me/", "me/raw/")
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(link) as resp:
+                        if resp.status != 200:
+                            logger.error(f"❌ Cookie download failed: HTTP {resp.status} from {url}")
+                            continue
+                        content = await resp.read()
+                        if not content or len(content) < 50:
+                            logger.error(f"❌ Cookie file empty or invalid from {url}")
+                            continue
+                        with open(path, "wb") as fw:
+                            fw.write(content)
+                        if os.path.exists(path) and os.path.getsize(path) > 0:
+                            saved_count += 1
+                            logger.info(f"✅ Saved: {os.path.basename(path)} ({len(content)} bytes)")
+            except Exception as e:
+                logger.error(f"❌ Cookie download error from {url}: {e}")
+        if saved_count > 0:
+            logger.info(f"✅ Cookies saved. ({saved_count} file(s))")
+        else:
+            logger.error("❌ No cookies saved! Check COOKIE_URL in .env. YouTube downloads will fail!")
 
     def valid(self, url: str) -> bool:
         return bool(re.match(self.regex, url))
