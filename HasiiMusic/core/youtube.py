@@ -76,9 +76,17 @@ class YouTube:
                             fw.write(content)
                         if os.path.exists(path) and os.path.getsize(path) > 0:
                             saved_count += 1
-                            logger.info(f"✅ Saved: {os.path.basename(path)} ({len(content)} bytes)")
+                            # Add the new cookie file to the list immediately
+                            cookie_filename = os.path.basename(path)
+                            if cookie_filename not in self.cookies:
+                                self.cookies.append(cookie_filename)
+                            logger.info(f"✅ Saved: {cookie_filename} ({len(content)} bytes)")
             except Exception as e:
                 logger.error(f"❌ Cookie download error from {url}: {e}")
+        
+        # Force refresh of cookie list after download
+        self.checked = True
+        
         if saved_count > 0:
             logger.info(f"✅ Cookies saved. ({saved_count} file(s))")
         else:
@@ -318,14 +326,14 @@ class YouTube:
                                 logger.error(f"❌ Failed to rename .part file: {rename_ex}")
                                 return None
                         else:
-                            logger.error(f"❌ Download completed but file not found: {filename}")
+                            logger.warning(f"⚠️ Download completed but file not found: {filename}")
                             return None
                     return filename
                 except yt_dlp.utils.ExtractorError as ex:
                     error_msg = str(ex)
                     if "Sign in to confirm" in error_msg or "bot" in error_msg.lower():
-                        logger.error(
-                            "❌ YouTube bot detection: Please update cookies or wait before retrying.")
+                        logger.warning(
+                            f"⚠️ YouTube bot detection for {video_id}. This is temporary.")
                     elif "not available" in error_msg.lower():
                         logger.error(
                             "❌ Video not available: May be region-blocked or private.")
@@ -334,12 +342,13 @@ class YouTube:
                             "❌ Age-restricted video: Cookies required.")
                     else:
                         logger.error("❌ YouTube extraction failed: %s", ex)
-                    if cookie and cookie in self.cookies:
-                        self.cookies.remove(cookie)
                     return None
                 except yt_dlp.utils.DownloadError as ex:
                     error_msg = str(ex)
-                    if "failed to load cookies" in error_msg.lower() or "netscape format" in error_msg.lower():
+                    if "416" in error_msg or "Requested range not satisfiable" in error_msg:
+                        # HTTP 416 - file partially downloaded, delete and retry won't help
+                        logger.warning(f"⚠️ Range error for {video_id}, skipping")
+                    elif "failed to load cookies" in error_msg.lower() or "netscape format" in error_msg.lower():
                         logger.error(
                             "❌ Corrupted cookie file detected, removing: %s", cookie)
                         # Remove corrupted cookie from list and filesystem
@@ -350,12 +359,10 @@ class YouTube:
                         except:
                             pass
                     else:
-                        logger.error("❌ Download error: %s", ex)
-                        if cookie and cookie in self.cookies:
-                            self.cookies.remove(cookie)
+                        logger.warning(f"⚠️ Download error for {video_id}: {ex}")
                     return None
                 except Exception as ex:
-                    logger.error("❌ Unexpected download error: %s", ex)
+                    logger.warning(f"⚠️ Unexpected download error for {video_id}: {ex}")
                     return None
             return filename
 
