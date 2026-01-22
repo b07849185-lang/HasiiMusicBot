@@ -163,6 +163,7 @@ async def update_timer(length=10):
                     "MESSAGE_NOT_MODIFIED",
                     "MESSAGE_ID_INVALID",
                     "MESSAGE_DELETE",
+                    "MESSAGE_AUTHOR_REQUIRED",
                     "CHAT_ADMIN_REQUIRED",
                     "CHANNEL_PRIVATE",
                     "haven't joined this channel"
