@@ -288,10 +288,10 @@ class YouTube:
         cookie = self.get_cookies()
         base_opts = {
             "outtmpl": "downloads/%(id)s.%(ext)s",
-            "quiet": False,  # Enable output to see what's happening
+            "quiet": True,
             "noplaylist": True,
             "geo_bypass": True,
-            "no_warnings": False,  # Show warnings
+            "no_warnings": True,
             "overwrites": False,
             "nocheckcertificate": True,
             "cookiefile": cookie,
@@ -302,7 +302,7 @@ class YouTube:
             "socket_timeout": 15,
             "retries": 1,
             "fragment_retries": 1,
-            "ignoreerrors": False,  # Raise errors instead of silently skipping
+            "ignoreerrors": True,
         }
 
         # High-quality audio: Opus codec in WebM container for best quality
