@@ -60,8 +60,8 @@ class Config:
 
         # ============ MUSIC BOT LIMITS ============
         # Convert minutes to seconds for duration limit
-        # Max song duration (default: 150 min)
-        self.DURATION_LIMIT: int = int(getenv("DURATION_LIMIT", "150")) * 60
+        # Max song duration (default: 300 min)
+        self.DURATION_LIMIT: int = int(getenv("DURATION_LIMIT", "300")) * 60
         # Max songs in queue (default: 30)
         self.QUEUE_LIMIT: int = int(getenv("QUEUE_LIMIT", "30"))
         # Max songs from playlist (default: 20)
