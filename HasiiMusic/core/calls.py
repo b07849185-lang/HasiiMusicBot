@@ -332,7 +332,12 @@ class TgCall(PyTgCalls):
             media.time = seconds
             
             # Get message to update
-            msg = await app.get_messages(chat_id, media.message_id)
+            try:
+                msg = await app.get_messages(chat_id, media.message_id)
+            except Exception:
+                # Message deleted or doesn't exist, create new one
+                msg = None
+            
             if not msg:
                 _lang = await lang.get_lang(chat_id)
                 msg = await app.send_message(chat_id=chat_id, text=_lang["seeking"])
@@ -341,7 +346,7 @@ class TgCall(PyTgCalls):
             await self.play_media(chat_id, msg, media, seek_time=seconds)
             return True
         except Exception as e:
-            logger.error(f"Error in seek_stream for {chat_id}: {e}", exc_info=True)
+            logger.warning(f"Seek stream failed for {chat_id}: {e}")
             return False
 
     async def play_next(self, chat_id: int) -> None:
