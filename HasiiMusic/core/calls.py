@@ -374,8 +374,13 @@ class TgCall(PyTgCalls):
                     media = queue.get_current(chat_id)
                     if media:
                         _lang = await lang.get_lang(chat_id)
-                        msg = await app.send_message(chat_id=chat_id, text=_lang["play_again"])
-                        await self.play_media(chat_id, msg, media)
+                        try:
+                            msg = await app.send_message(chat_id=chat_id, text=_lang["play_again"])
+                            await self.play_media(chat_id, msg, media)
+                        except errors.ChannelPrivate:
+                            logger.warning(f"Bot removed from {chat_id}, cleaning up")
+                            await self.leave_call(chat_id)
+                            await db.rm_chat(chat_id)
                         return
                 
                 media = queue.get_next(chat_id)
@@ -387,12 +392,17 @@ class TgCall(PyTgCalls):
                         # Reset queue to beginning
                         first_track = all_items[0]
                         _lang = await lang.get_lang(chat_id)
-                        msg = await app.send_message(chat_id=chat_id, text="🔁 Looping queue...")
-                        if not first_track.file_path:
-                            is_live = getattr(first_track, 'is_live', False)
-                            first_track.file_path = await yt.download(first_track.id, is_live=is_live)
-                        first_track.message_id = msg.id
-                        await self.play_media(chat_id, msg, first_track)
+                        try:
+                            msg = await app.send_message(chat_id=chat_id, text="🔁 Looping queue...")
+                            if not first_track.file_path:
+                                is_live = getattr(first_track, 'is_live', False)
+                                first_track.file_path = await yt.download(first_track.id, is_live=is_live)
+                            first_track.message_id = msg.id
+                            await self.play_media(chat_id, msg, first_track)
+                        except errors.ChannelPrivate:
+                            logger.warning(f"Bot removed from {chat_id}, cleaning up")
+                            await self.leave_call(chat_id)
+                            await db.rm_chat(chat_id)
                         return
                 
                 try:
@@ -418,10 +428,20 @@ class TgCall(PyTgCalls):
                     await asyncio.sleep(fw.value + 1)
                     try:
                         msg = await app.send_message(chat_id=chat_id, text=_lang["play_next"])
+                    except errors.ChannelPrivate:
+                        logger.warning(f"Bot removed from {chat_id}, cleaning up")
+                        await self.leave_call(chat_id)
+                        await db.rm_chat(chat_id)
+                        return
                     except Exception as e:
                         logger.error(f"Failed to send play_next message after FloodWait for {chat_id}: {e}")
                         # Continue without message - don't let this stop playback
                         msg = None
+                except errors.ChannelPrivate:
+                    logger.warning(f"Bot removed from {chat_id}, cleaning up")
+                    await self.leave_call(chat_id)
+                    await db.rm_chat(chat_id)
+                    return
                 except Exception as e:
                     logger.error(f"Failed to send play_next message for {chat_id}: {e}")
                     msg = None
