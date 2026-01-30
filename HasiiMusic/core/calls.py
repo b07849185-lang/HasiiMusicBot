@@ -265,7 +265,15 @@ class TgCall(PyTgCalls):
                 await self.stop(chat_id)
                 if message:
                     try:
-                        await message.edit_text(_lang.get("error_vc_disabled", _lang["error_no_call"]))
+                        await message.edit_text(
+                            f"<blockquote><b>🔐 Bot Admin Required</b></blockquote>\n\n"
+                            f"<blockquote>To play music in this chat, I need to be an <b>administrator</b>.\n\n"
+                            f"<b>Required permissions:</b>\n"
+                            f"• Manage Voice Chats\n"
+                            f"• Invite Users via Link\n"
+                            f"• Delete Messages\n\n"
+                            f"Please promote me as admin with the required permissions.</blockquote>"
+                        )
                     except Exception:
                         pass
             elif "GROUPCALL_INVALID" in error_str or "GROUPCALL" in error_str:
