@@ -271,7 +271,29 @@ async def format_scoreboard(scoreboard_data: dict, lang: dict, started: bool = F
     text += "\n"
     
     # Format based on tournament type
-    if tournament_type == \"team\":\n        # Sort teams by score\n        sorted_teams = sorted(team_scores.items(), key=lambda x: x[1][\"total\"], reverse=True)\n        \n        for rank, (team_name, data) in enumerate(sorted_teams, 1):\n            rank_emoji = [\"👑\", \"🥈\", \"🥉\"][rank-1] if rank <= 3 else f\"{rank}.\"\n            text += (\n                f\"{rank_emoji} <b>{team_name}</b>\\n\"\n                f\"   💎 Total Score: <b>{data['total']}</b>\\n\"\n                f\"   👥 Members ({len(data['players'])}):\\n\"\n            )\n            \n            for idx, player in enumerate(data[\"players\"], 1):\n                text += f\"      {idx}. {player['name']} - {player['score']}\\n\"\n            \n            text += \"\\n\"\n    else:\n        # Solo mode - show individual rankings\n        sorted_players = sorted(team_scores.items(), key=lambda x: x[1][\"score\"], reverse=True)\n        \n        for rank, (player_name, data) in enumerate(sorted_players, 1):\n            rank_emoji = [\"👑\", \"🥈\", \"🥉\"][rank-1] if rank <= 3 else f\"{rank}.\"\n            text += f\"{rank_emoji} <b>{player_name}</b> - 💎 {data['score']}\\n\"
+    if tournament_type == "team":
+        # Sort teams by score
+        sorted_teams = sorted(team_scores.items(), key=lambda x: x[1]["total"], reverse=True)
+        
+        for rank, (team_name, data) in enumerate(sorted_teams, 1):
+            rank_emoji = ["👑", "🥈", "🥉"][rank-1] if rank <= 3 else f"{rank}."
+            text += (
+                f"{rank_emoji} <b>{team_name}</b>\n"
+                f"   💎 Total Score: <b>{data['total']}</b>\n"
+                f"   👥 Members ({len(data['players'])}):\n"
+            )
+            
+            for idx, player in enumerate(data["players"], 1):
+                text += f"      {idx}. {player['name']} - {player['score']}\n"
+            
+            text += "\n"
+    else:
+        # Solo mode - show individual rankings
+        sorted_players = sorted(team_scores.items(), key=lambda x: x[1]["score"], reverse=True)
+        
+        for rank, (player_name, data) in enumerate(sorted_players, 1):
+            rank_emoji = ["👑", "🥈", "🥉"][rank-1] if rank <= 3 else f"{rank}."
+            text += f"{rank_emoji} <b>{player_name}</b> - 💎 {data['score']}\n"
     
     if status == "pending":
         text += "\n💡 <i>Waiting for admin to start the tournament...</i>"
