@@ -47,17 +47,19 @@ class TournamentHelper:
                 "teams_count": teams_count,
                 "duration": duration,
                 "status": "pending",  # pending, active, finished
-                "teams": {},  # {team_name: [player_ids]}
+                "teams": {},  # {team_name: [player_ids]} - only for team mode
+                "players": [],  # [player_ids] - for solo mode
                 "scores": {},  # {player_id: score}
                 "start_time": None,
                 "end_time": None,
                 "winner": None
             }
             
-            # Initialize teams
-            team_names = ["🔴 Red Dragons", "🔵 Blue Wolves", "🟢 Green Vipers", "🟡 Yellow Tigers"]
-            for i in range(teams_count):
-                tournament_data["teams"][team_names[i]] = []
+            # Initialize teams only for team mode
+            if tournament_type == "team":
+                team_names = ["🔴 Red Dragons", "🔵 Blue Wolves", "🟢 Green Vipers", "🟡 Yellow Tigers"]
+                for i in range(teams_count):
+                    tournament_data["teams"][team_names[i]] = []
             
             await tournaments_col.insert_one(tournament_data)
             return True
@@ -82,7 +84,11 @@ class TournamentHelper:
                 return False
             
             # Check if at least 2 players joined
-            total_players = sum(len(players) for players in tournament["teams"].values())
+            if tournament["tournament_type"] == "team":
+                total_players = sum(len(players) for players in tournament["teams"].values())
+            else:
+                total_players = len(tournament.get("players", []))
+            
             if total_players < 2:
                 return False
             
@@ -167,30 +173,48 @@ class TournamentHelper:
                 return False, "already_started"
             
             # Check if already joined
-            for team_name, player_ids in tournament["teams"].items():
-                if user_id in player_ids:
+            is_team_mode = tournament["tournament_type"] == "team"
+            
+            if is_team_mode:
+                for team_name, player_ids in tournament["teams"].items():
+                    if user_id in player_ids:
+                        return False, "already_joined"
+                total_players = sum(len(players) for players in tournament["teams"].values())
+            else:
+                if user_id in tournament.get("players", []):
                     return False, "already_joined"
+                total_players = len(tournament.get("players", []))
             
             # Check max players
-            total_players = sum(len(players) for players in tournament["teams"].values())
             if total_players >= tournament["max_players"]:
                 return False, "max_players"
             
-            # Auto-assign to smallest team if team not specified
-            if not team or team not in tournament["teams"]:
-                team = min(
-                    tournament["teams"].items(),
-                    key=lambda x: len(x[1])
-                )[0]
-            
-            # Add player to team
-            await tournaments_col.update_one(
-                {"_id": tournament["_id"]},
-                {
-                    "$push": {f"teams.{team}": user_id},
-                    "$set": {f"scores.{user_id}": 0}
-                }
-            )
+            # Add player
+            if is_team_mode:
+                # Auto-assign to smallest team if team not specified
+                if not team or team not in tournament["teams"]:
+                    team = min(
+                        tournament["teams"].items(),
+                        key=lambda x: len(x[1])
+                    )[0]
+                
+                await tournaments_col.update_one(
+                    {"_id": tournament["_id"]},
+                    {
+                        "$push": {f"teams.{team}": user_id},
+                        "$set": {f"scores.{user_id}": 0}
+                    }
+                )
+            else:
+                # Solo mode - just add to players list
+                await tournaments_col.update_one(
+                    {"_id": tournament["_id"]},
+                    {
+                        "$push": {"players": user_id},
+                        "$set": {f"scores.{user_id}": 0}
+                    }
+                )
+                team = "solo"
             
             # Save player info
             await players_col.update_one(
@@ -219,13 +243,27 @@ class TournamentHelper:
             if not tournament or tournament["status"] != "pending":
                 return False
             
-            # Remove from team
-            for team_name, player_ids in tournament["teams"].items():
-                if user_id in player_ids:
+            is_team_mode = tournament["tournament_type"] == "team"
+            
+            if is_team_mode:
+                # Remove from team
+                for team_name, player_ids in tournament["teams"].items():
+                    if user_id in player_ids:
+                        await tournaments_col.update_one(
+                            {"_id": tournament["_id"]},
+                            {
+                                "$pull": {f"teams.{team_name}": user_id},
+                                "$unset": {f"scores.{user_id}": ""}
+                            }
+                        )
+                        return True
+            else:
+                # Remove from players list (solo mode)
+                if user_id in tournament.get("players", []):
                     await tournaments_col.update_one(
                         {"_id": tournament["_id"]},
                         {
-                            "$pull": {f"teams.{team_name}": user_id},
+                            "$pull": {"players": user_id},
                             "$unset": {f"scores.{user_id}": ""}
                         }
                     )
@@ -254,9 +292,14 @@ class TournamentHelper:
                 return False
             
             # Check if player is in tournament
-            user_in_tournament = any(
-                user_id in players for players in tournament["teams"].values()
-            )
+            is_team_mode = tournament["tournament_type"] == "team"
+            
+            if is_team_mode:
+                user_in_tournament = any(
+                    user_id in players for players in tournament["teams"].values()
+                )
+            else:
+                user_in_tournament = user_id in tournament.get("players", [])
             
             if not user_in_tournament:
                 return False
@@ -279,27 +322,39 @@ class TournamentHelper:
         if not tournament:
             return None
         
-        # Calculate team scores
+        is_team_mode = tournament["tournament_type"] == "team"
         team_scores = {}
-        for team_name, player_ids in tournament["teams"].items():
-            players_data = []
-            for pid in player_ids:
+        
+        if is_team_mode:
+            # Calculate team scores
+            for team_name, player_ids in tournament["teams"].items():
+                players_data = []
+                for pid in player_ids:
+                    player = await players_col.find_one({"user_id": pid})
+                    player_name = player.get("user_name", f"User{pid}") if player else f"User{pid}"
+                    players_data.append({
+                        "id": pid,
+                        "name": player_name,
+                        "score": tournament["scores"].get(str(pid), 0)
+                    })
+                
+                # Sort by score
+                players_data.sort(key=lambda x: x["score"], reverse=True)
+                
+                team_total = sum(p["score"] for p in players_data)
+                team_scores[team_name] = {
+                    "total": team_total,
+                    "players": players_data
+                }
+        else:
+            # Solo mode - individual scores
+            for pid in tournament.get("players", []):
                 player = await players_col.find_one({"user_id": pid})
                 player_name = player.get("user_name", f"User{pid}") if player else f"User{pid}"
-                players_data.append({
-                    "id": pid,
-                    "name": player_name,
-                    "score": tournament["scores"].get(str(pid), 0)
-                })
-            
-            # Sort by score
-            players_data.sort(key=lambda x: x["score"], reverse=True)
-            
-            team_total = sum(p["score"] for p in players_data)
-            team_scores[team_name] = {
-                "total": team_total,
-                "players": players_data
-            }
+                team_scores[player_name] = {
+                    "score": tournament["scores"].get(str(pid), 0),
+                    "id": pid
+                }
         
         return {
             "tournament": tournament,

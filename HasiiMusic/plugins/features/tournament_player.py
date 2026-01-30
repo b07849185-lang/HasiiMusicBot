@@ -44,23 +44,41 @@ async def join_tournament_cmd(_, message: Message):
         )
         
         if success:
-            # Show team selection keyboard
-            keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton(f"🔴 Red Dragons", callback_data=f"tour_team_🔴 Red Dragons")],
-                [InlineKeyboardButton(f"🔵 Blue Wolves", callback_data=f"tour_team_🔵 Blue Wolves")],
-                [InlineKeyboardButton(f"🟢 Green Vipers", callback_data=f"tour_team_🟢 Green Vipers")],
-                [InlineKeyboardButton(f"🟡 Yellow Tigers", callback_data=f"tour_team_🟡 Yellow Tigers")],
-                [InlineKeyboardButton("📊 View Teams", callback_data="tour_scores")]
-            ])
+            is_team_mode = tournament["tournament_type"] == "team"
             
-            await message.reply_text(
-                message.lang.get(
-                    "tournament_joined",
-                    "✅ You joined <b>{0}</b>!\n\n"
-                    "Want to switch teams? Choose below:"
-                ).format(result),
-                reply_markup=keyboard
-            )
+            if is_team_mode:
+                # Show team selection keyboard for team mode
+                keyboard = InlineKeyboardMarkup([
+                    [InlineKeyboardButton(f"🔴 Red Dragons", callback_data=f"tour_team_🔴 Red Dragons")],
+                    [InlineKeyboardButton(f"🔵 Blue Wolves", callback_data=f"tour_team_🔵 Blue Wolves")],
+                    [InlineKeyboardButton(f"🟢 Green Vipers", callback_data=f"tour_team_🟢 Green Vipers")],
+                    [InlineKeyboardButton(f"🟡 Yellow Tigers", callback_data=f"tour_team_🟡 Yellow Tigers")],
+                    [InlineKeyboardButton("📊 View Teams", callback_data="tour_scores")]
+                ])
+                
+                await message.reply_text(
+                    message.lang.get(
+                        "tournament_joined",
+                        "✅ You joined <b>{0}</b>!\n\n"
+                        "Want to switch teams? Choose below:"
+                    ).format(result),
+                    reply_markup=keyboard
+                )
+            else:
+                # Solo mode - no team selection needed
+                keyboard = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("📊 View Players", callback_data="tour_scores")]
+                ])
+                
+                await message.reply_text(
+                    message.lang.get(
+                        "tournament_joined_solo",
+                        "✅ You joined the tournament!\n\n"
+                        "🏆 Solo mode - compete individually!\n"
+                        "Wait for admin to start with /gamestart"
+                    ),
+                    reply_markup=keyboard
+                )
         else:
             error_messages = {
                 "no_tournament": "❌ No tournament available!",
