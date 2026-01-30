@@ -84,19 +84,17 @@ async def join_tournament_cmd(_, message: Message):
                     reply_markup=keyboard
                 )
             else:
-                await message.reply_text("❌ Failed to join tournament!")
-        else:
-            error_messages = {
-                "no_tournament": "❌ No tournament available!",
-                "already_started": "❌ Tournament already started!",
-                "already_joined": "❌ You've already joined this tournament!",
-                "max_players": "❌ Tournament is full!",
-                "error": "❌ An error occurred!"
-            }
-            await message.reply_text(message.lang.get(
-                f"tournament_{result}",
-                error_messages.get(result, "❌ Failed to join!")
-            ))
+                error_messages = {
+                    "no_tournament": "❌ No tournament available!",
+                    "already_started": "❌ Tournament already started!",
+                    "already_joined": "❌ You've already joined this tournament!",
+                    "max_players": "❌ Tournament is full!",
+                    "error": "❌ An error occurred!"
+                }
+                await message.reply_text(message.lang.get(
+                    f"tournament_{result}",
+                    error_messages.get(result, "❌ Failed to join!")
+                ))
     except Exception as e:
         print(f"Error in join_tournament_cmd: {e}")
         await message.reply_text(f"❌ Error: {str(e)}")
