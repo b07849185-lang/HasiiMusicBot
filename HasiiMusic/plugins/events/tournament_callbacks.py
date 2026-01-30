@@ -86,7 +86,8 @@ async def tournament_create_callback(_, query: CallbackQuery):
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("✅ Join Tournament", callback_data="tour_join_auto")],
                 [InlineKeyboardButton("📊 View Standings", callback_data="tour_scores")],
-                [InlineKeyboardButton("🎮 Start Tournament", callback_data="tour_begin")]
+                [InlineKeyboardButton("🎮 Start Tournament", callback_data="tour_begin")],
+                [InlineKeyboardButton("❌ Cancel", callback_data="tour_cancel")]
             ])
             
             type_name = "Team Battle" if tournament_type == "team" else "Solo Competition"
@@ -187,6 +188,11 @@ async def tournament_change_team_callback(_, query: CallbackQuery):
     try:
         team_name = query.data.replace("tour_team_", "")
         
+        # Check tournament type
+        tournament = await TournamentHelper.get_active_tournament(query.message.chat.id)
+        if not tournament or tournament["tournament_type"] != "team":
+            return await query.answer("Team switching not available in this mode!", show_alert=True)
+        
         # Leave current team and join new one
         await TournamentHelper.leave_tournament(query.message.chat.id, query.from_user.id)
         
@@ -198,11 +204,12 @@ async def tournament_change_team_callback(_, query: CallbackQuery):
         )
         
         if success:
-            await query.answer(f"Switched to {team_name}!")
+            await query.answer(f"✅ Switched to {team_name}!")
         else:
-            await query.answer("Failed to switch teams!", show_alert=True)
+            await query.answer("❌ Failed to switch teams!", show_alert=True)
     except Exception as e:
-        await query.answer(f"Error: {str(e)}", show_alert=True)
+        print(f"Error in team switch: {e}")
+        await query.answer("❌ Error switching teams!", show_alert=True)
 
 
 @app.on_callback_query(filters.regex(r"^tour_begin$"))
@@ -211,16 +218,24 @@ async def tournament_begin_callback(_, query: CallbackQuery):
     try:
         is_adm = await is_admin_callback(query)
         if not is_adm:
-            return await query.answer("Only admins can start!", show_alert=True)
+            return await query.answer("⚠️ Only admins can start!", show_alert=True)
         
         tournament = await TournamentHelper.get_active_tournament(query.message.chat.id)
         if not tournament:
-            return await query.answer("No tournament found!", show_alert=True)
+            return await query.answer("❌ No tournament found!", show_alert=True)
+        
+        if tournament["status"] == "active":
+            return await query.answer("⚠️ Tournament is already active!", show_alert=True)
         
         # Check minimum players
-        total_players = sum(len(players) for players in tournament["teams"].values())
+        is_team_mode = tournament["tournament_type"] == "team"
+        if is_team_mode:
+            total_players = sum(len(players) for players in tournament["teams"].values())
+        else:
+            total_players = len(tournament.get("players", []))
+        
         if total_players < 2:
-            return await query.answer(f"Need at least 2 players! Current: {total_players}", show_alert=True)
+            return await query.answer(f"⚠️ Need at least 2 players! Current: {total_players}", show_alert=True)
         
         success = await TournamentHelper.start_tournament(query.message.chat.id)
         if success:
@@ -230,16 +245,22 @@ async def tournament_begin_callback(_, query: CallbackQuery):
             scoreboard_text = await format_scoreboard(scoreboard_data, {}, started=True)
             
             keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton("📊 Live Scores", callback_data="tour_scores")],
+                [InlineKeyboardButton("🔄 Refresh Scores", callback_data="tour_scores")],
                 [InlineKeyboardButton("🏁 End Tournament", callback_data="tour_end")]
             ])
             
-            await query.message.edit_text(scoreboard_text, reply_markup=keyboard)
-            await query.answer("Tournament started! Let the games begin!")
+            try:
+                await query.message.edit_text(scoreboard_text, reply_markup=keyboard)
+                await query.answer("🎮 Tournament started! Let the games begin!")
+            except Exception:
+                # If edit fails, send new message
+                await query.message.reply_text(scoreboard_text, reply_markup=keyboard)
+                await query.answer("🎮 Tournament started!")
         else:
-            await query.answer("Failed to start!", show_alert=True)
+            await query.answer("❌ Failed to start!", show_alert=True)
     except Exception as e:
-        await query.answer(f"Error: {str(e)}", show_alert=True)
+        print(f"Error in tournament begin: {e}")
+        await query.answer(f"❌ Error: {str(e)}", show_alert=True)
 
 
 @app.on_callback_query(filters.regex(r"^tour_scores$"))
@@ -248,24 +269,41 @@ async def tournament_scores_callback(_, query: CallbackQuery):
     try:
         scoreboard_data = await TournamentHelper.get_scoreboard(query.message.chat.id)
         if not scoreboard_data:
-            return await query.answer("No active tournament!", show_alert=True)
+            return await query.answer("❌ No active tournament!", show_alert=True)
         
         from HasiiMusic.plugins.features.tournament_admin import format_scoreboard
-        scoreboard_text = await format_scoreboard(scoreboard_data, {})
+        tournament = scoreboard_data["tournament"]
+        scoreboard_text = await format_scoreboard(scoreboard_data, {}, started=(tournament["status"] == "active"))
         
-        keyboard = InlineKeyboardMarkup([
-            [InlineKeyboardButton("🔄 Refresh", callback_data="tour_scores")]
-        ])
+        # Build keyboard based on tournament status
+        keyboard_buttons = []
         
-        if scoreboard_data["tournament"]["status"] == "active":
-            keyboard.inline_keyboard.append(
-                [InlineKeyboardButton("🏁 End Tournament", callback_data="tour_end")]
-            )
+        if tournament["status"] == "pending":
+            # Pending - show join and start buttons
+            keyboard_buttons.append([InlineKeyboardButton("✅ Join", callback_data="tour_join_auto")])
+            keyboard_buttons.append([InlineKeyboardButton("🎮 Start Tournament", callback_data="tour_begin")])
+        elif tournament["status"] == "active":
+            # Active - show refresh and end buttons
+            keyboard_buttons.append([InlineKeyboardButton("🔄 Refresh", callback_data="tour_scores")])
+            keyboard_buttons.append([InlineKeyboardButton("🏁 End Tournament", callback_data="tour_end")])
         
-        await query.message.edit_text(scoreboard_text, reply_markup=keyboard)
-        await query.answer("Scoreboard updated!")
+        keyboard = InlineKeyboardMarkup(keyboard_buttons) if keyboard_buttons else None
+        
+        # Try to edit, if fails (MESSAGE_NOT_MODIFIED), just answer
+        try:
+            if keyboard:
+                await query.message.edit_text(scoreboard_text, reply_markup=keyboard)
+            else:
+                await query.message.edit_text(scoreboard_text)
+            await query.answer("📊 Scoreboard updated!")
+        except Exception as e:
+            if "MESSAGE_NOT_MODIFIED" in str(e):
+                await query.answer("📊 Already showing latest scores!")
+            else:
+                raise
     except Exception as e:
-        await query.answer(f"Error: {str(e)}", show_alert=True)
+        print(f"Error in scores callback: {e}")
+        await query.answer("❌ Error loading scores!", show_alert=True)
 
 
 @app.on_callback_query(filters.regex(r"^tour_end$"))
@@ -274,9 +312,59 @@ async def tournament_end_callback(_, query: CallbackQuery):
     try:
         is_adm = await is_admin_callback(query)
         if not is_adm:
-            return await query.answer("Only admins can end the tournament!", show_alert=True)
+            return await query.answer("⚠️ Only admins can end the tournament!", show_alert=True)
+        
+        tournament = await TournamentHelper.get_active_tournament(query.message.chat.id)
+        if not tournament:
+            return await query.answer("❌ No active tournament!", show_alert=True)
+        
+        if tournament["status"] != "active":
+            return await query.answer("⚠️ Tournament hasn't started yet! Use /gamecancel to cancel.", show_alert=True)
         
         success, results = await TournamentHelper.stop_tournament(query.message.chat.id)
+        if success and results:
+            from HasiiMusic.plugins.features.tournament_admin import format_results
+            results_text = await format_results(results, {})
+            
+            try:
+                await query.message.edit_text(results_text)
+                await query.answer("🏆 Tournament ended!")
+            except Exception:
+                await query.message.reply_text(results_text)
+                await query.answer("🏆 Tournament ended!")
+        else:
+            await query.answer("❌ Failed to end tournament!", show_alert=True)
+    except Exception as e:
+        print(f"Error in tournament end: {e}")
+        await query.answer(f"❌ Error: {str(e)}", show_alert=True)
+
+
+@app.on_callback_query(filters.regex(r"^tour_cancel$"))
+async def tournament_cancel_callback(_, query: CallbackQuery):
+    """Cancel tournament - admin only"""
+    try:
+        is_adm = await is_admin_callback(query)
+        if not is_adm:
+            return await query.answer("⚠️ Only admins can cancel!", show_alert=True)
+        
+        success = await TournamentHelper.cancel_tournament(query.message.chat.id)
+        if success:
+            try:
+                await query.message.edit_text(
+                    "❌ <b>Tournament Cancelled</b>\n\n"
+                    "The tournament has been cancelled by an admin."
+                )
+                await query.answer("✅ Tournament cancelled!")
+            except Exception:
+                await query.message.reply_text("❌ Tournament cancelled!")
+                await query.answer("✅ Cancelled!")
+        else:
+            await query.answer("❌ No tournament to cancel!", show_alert=True)
+    except Exception as e:
+        print(f"Error in cancel: {e}")
+        await query.answer("❌ Error cancelling!", show_alert=True)
+        print(f"Error in tournament end: {e}")
+        await query.answer(f"❌ Error: {str(e)}", show_alert=True)
         if success and results:
             from HasiiMusic.plugins.features.tournament_admin import format_results
             
