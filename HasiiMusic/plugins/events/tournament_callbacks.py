@@ -10,6 +10,9 @@ from HasiiMusic.helpers._tournament import TournamentHelper
 from HasiiMusic.core.lang import Language
 from HasiiMusic.helpers._admins import is_admin_callback
 
+# Temporary storage for tournament settings per chat
+tournament_settings = {}
+
 
 # Tournament creation callbacks
 @app.on_callback_query(filters.regex(r"^tour_setup_"))
@@ -17,9 +20,16 @@ async def tournament_setup_callback(_, query: CallbackQuery):
     """Handle tournament setup options"""
     try:
         action = query.data.split("_")[-1]
+        chat_id = query.message.chat.id
         
-        # Store in user data (you can implement session storage)
-        await query.answer(f"Selected: {action.capitalize()}")
+        # Initialize settings if not exists
+        if chat_id not in tournament_settings:
+            tournament_settings[chat_id] = {"type": "team", "game": "all"}
+        
+        # Update tournament type
+        tournament_settings[chat_id]["type"] = action
+        
+        await query.answer(f"Selected: {action.capitalize()} mode")
         
     except Exception as e:
         await query.answer(f"Error: {str(e)}", show_alert=True)
@@ -30,6 +40,15 @@ async def tournament_game_callback(_, query: CallbackQuery):
     """Handle game type selection"""
     try:
         game_type = query.data.split("_")[-1]
+        chat_id = query.message.chat.id
+        
+        # Initialize settings if not exists
+        if chat_id not in tournament_settings:
+            tournament_settings[chat_id] = {"type": "team", "game": "all"}
+        
+        # Update game type
+        tournament_settings[chat_id]["game"] = game_type
+        
         await query.answer(f"Selected game: {game_type}")
         
     except Exception as e:
@@ -45,29 +64,41 @@ async def tournament_create_callback(_, query: CallbackQuery):
         if not is_adm:
             return await query.answer("Only admins can create tournaments!", show_alert=True)
         
-        # Create with default or stored settings
+        chat_id = query.message.chat.id
+        
+        # Get stored settings or use defaults
+        settings = tournament_settings.get(chat_id, {"type": "team", "game": "all"})
+        tournament_type = settings["type"]
+        game_type = settings["game"]
+        
+        # Create tournament with selected settings
         success = await TournamentHelper.create_tournament(
-            chat_id=query.message.chat.id,
+            chat_id=chat_id,
             created_by=query.from_user.id,
-            tournament_type="team",
-            game_type="all",
+            tournament_type=tournament_type,
+            game_type=game_type,
             max_players=20,
-            teams_count=2,
+            teams_count=2 if tournament_type == "team" else 0,
             duration=30
         )
         
         if success:
             keyboard = InlineKeyboardMarkup([
                 [InlineKeyboardButton("✅ Join Tournament", callback_data="tour_join_auto")],
-                [InlineKeyboardButton("📊 View Teams", callback_data="tour_scores")],
+                [InlineKeyboardButton("📊 View Standings", callback_data="tour_scores")],
                 [InlineKeyboardButton("🎮 Start Tournament", callback_data="tour_begin")]
             ])
+            
+            type_name = "Team Battle" if tournament_type == "team" else "Solo Competition"
+            game_name = {"all": "All Dice Games", "dice": "🎲 Dice", "dart": "🎯 Dart", 
+                        "basket": "🏀 Basketball", "jackpot": "🎰 Jackpot", 
+                        "ball": "🎳 Bowling", "football": "⚽ Football"}.get(game_type, "All Games")
             
             text = (
                 "🎮 <b>TOURNAMENT CREATED!</b>\n"
                 "━━━━━━━━━━━━━━━━━━━━━\n\n"
-                "🏆 Type: Team Battle\n"
-                "🎯 Games: All Dice Games\n"
+                f"🏆 Type: {type_name}\n"
+                f"🎯 Games: {game_name}\n"
                 "👥 Max Players: 20\n"
                 "⏰ Duration: 30 minutes\n\n"
                 "💡 Players can join now!\n"
@@ -76,6 +107,10 @@ async def tournament_create_callback(_, query: CallbackQuery):
             
             await query.message.edit_text(text, reply_markup=keyboard)
             await query.answer("Tournament created successfully!")
+            
+            # Clear settings after creation
+            if chat_id in tournament_settings:
+                del tournament_settings[chat_id]
         else:
             await query.answer("Failed to create tournament! One may already exist.", show_alert=True)
     except Exception as e:
@@ -88,30 +123,51 @@ async def tournament_join_callback(_, query: CallbackQuery):
     try:
         user = query.from_user
         user_name = user.first_name or f"User{user.id}"
+        chat_id = query.message.chat.id
+        
+        # Get tournament to check type
+        tournament = await TournamentHelper.get_active_tournament(chat_id)
+        if not tournament:
+            return await query.answer("No active tournament!", show_alert=True)
+        
+        is_team_mode = tournament["tournament_type"] == "team"
         
         success, result = await TournamentHelper.join_tournament(
-            query.message.chat.id,
+            chat_id,
             user.id,
             user_name,
             None  # Auto-assign team
         )
         
         if success:
-            # Show team selection
-            keyboard = InlineKeyboardMarkup([
-                [InlineKeyboardButton("🔴 Red Dragons", callback_data="tour_team_🔴 Red Dragons")],
-                [InlineKeyboardButton("🔵 Blue Wolves", callback_data="tour_team_🔵 Blue Wolves")],
-                [InlineKeyboardButton("🟢 Green Vipers", callback_data="tour_team_🟢 Green Vipers")],
-                [InlineKeyboardButton("🟡 Yellow Tigers", callback_data="tour_team_🟡 Yellow Tigers")],
-                [InlineKeyboardButton("📊 View Teams", callback_data="tour_scores")]
-            ])
-            
-            await query.answer(f"Joined {result}!")
-            await query.message.reply_text(
-                f"✅ {user_name} joined <b>{result}</b>!\n\n"
-                f"Want to switch teams? Choose below:",
-                reply_markup=keyboard
-            )
+            if is_team_mode:
+                # Team mode - show team selection
+                keyboard = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("🔴 Red Dragons", callback_data="tour_team_🔴 Red Dragons")],
+                    [InlineKeyboardButton("🔵 Blue Wolves", callback_data="tour_team_🔵 Blue Wolves")],
+                    [InlineKeyboardButton("🟢 Green Vipers", callback_data="tour_team_🟢 Green Vipers")],
+                    [InlineKeyboardButton("🟡 Yellow Tigers", callback_data="tour_team_🟡 Yellow Tigers")],
+                    [InlineKeyboardButton("📊 View Teams", callback_data="tour_scores")]
+                ])
+                
+                await query.answer(f"Joined {result}!")
+                await query.message.reply_text(
+                    f"✅ {user_name} joined <b>{result}</b>!\n\n"
+                    f"Want to switch teams? Choose below:",
+                    reply_markup=keyboard
+                )
+            else:
+                # Solo mode - no team selection
+                keyboard = InlineKeyboardMarkup([
+                    [InlineKeyboardButton("📊 View Players", callback_data="tour_scores")]
+                ])
+                
+                await query.answer("Joined tournament!")
+                await query.message.reply_text(
+                    f"✅ {user_name} joined the tournament!\n\n"
+                    f"🏆 Solo mode - compete individually!",
+                    reply_markup=keyboard
+                )
         else:
             error_messages = {
                 "no_tournament": "No tournament available!",
