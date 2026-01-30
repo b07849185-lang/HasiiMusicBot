@@ -279,13 +279,13 @@ async def tournament_scores_callback(_, query: CallbackQuery):
         keyboard_buttons = []
         
         if tournament["status"] == "pending":
-            # Pending - show join and start buttons
-            keyboard_buttons.append([InlineKeyboardButton("✅ Join", callback_data="tour_join_auto")])
-            keyboard_buttons.append([InlineKeyboardButton("🎮 Start Tournament", callback_data="tour_begin")])
-        elif tournament["status"] == "active":
-            # Active - show refresh and end buttons
+            # Pending - show refresh and back
             keyboard_buttons.append([InlineKeyboardButton("🔄 Refresh", callback_data="tour_scores")])
-            keyboard_buttons.append([InlineKeyboardButton("🏁 End Tournament", callback_data="tour_end")])
+            keyboard_buttons.append([InlineKeyboardButton("◀️ Back", callback_data="tour_back")])
+        elif tournament["status"] == "active":
+            # Active - show refresh and back
+            keyboard_buttons.append([InlineKeyboardButton("🔄 Refresh", callback_data="tour_scores")])
+            keyboard_buttons.append([InlineKeyboardButton("◀️ Back", callback_data="tour_back")])
         
         keyboard = InlineKeyboardMarkup(keyboard_buttons) if keyboard_buttons else None
         
@@ -378,6 +378,63 @@ async def tournament_cancel_callback(_, query: CallbackQuery):
     except Exception as e:
         print(f"Error in cancel: {e}")
         await query.answer("❌ Error cancelling!", show_alert=True)
+
+
+@app.on_callback_query(filters.regex(r"^tour_back$"))
+async def tournament_back_callback(_, query: CallbackQuery):
+    """Go back to main tournament view"""
+    try:
+        tournament = await TournamentHelper.get_active_tournament(query.message.chat.id)
+        if not tournament:
+            return await query.answer("❌ No active tournament!", show_alert=True)
+        
+        # Recreate the main tournament view
+        keyboard_buttons = []
+        
+        if tournament["status"] == "pending":
+            keyboard_buttons = [
+                [InlineKeyboardButton("✅ Join Tournament", callback_data="tour_join_auto")],
+                [InlineKeyboardButton("📊 View Standings", callback_data="tour_scores")],
+                [InlineKeyboardButton("🎮 Start Tournament", callback_data="tour_begin")],
+                [InlineKeyboardButton("🏁 End Tournament", callback_data="tour_end")]
+            ]
+            status_text = "⏳ PENDING"
+            message = "💡 Players can join now!\nAdmin will start when ready."
+        else:
+            keyboard_buttons = [
+                [InlineKeyboardButton("🔄 Refresh Scores", callback_data="tour_scores")],
+                [InlineKeyboardButton("🏁 End Tournament", callback_data="tour_end")]
+            ]
+            status_text = "🔥 ACTIVE"
+            message = "🎮 Tournament is LIVE! Play dice games to earn points!"
+        
+        keyboard = InlineKeyboardMarkup(keyboard_buttons)
+        
+        type_name = "Team Battle" if tournament["tournament_type"] == "team" else "Solo Competition"
+        game_name = {"all": "All Dice Games", "dice": "🎲 Dice", "dart": "🎯 Dart", 
+                    "basket": "🏀 Basketball", "jackpot": "🎰 Jackpot", 
+                    "ball": "🎳 Bowling", "football": "⚽ Football"}.get(tournament["game_type"], "All Games")
+        
+        text = (
+            f"🎮 <b>TOURNAMENT ARENA {status_text}</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━━\n\n"
+            f"🏆 Type: {type_name}\n"
+            f"🎯 Games: {game_name}\n"
+            f"👥 Max Players: {tournament['max_players']}\n"
+            f"⏰ Duration: {tournament['duration']} minutes\n\n"
+            f"{message}"
+        )
+        
+        try:
+            await query.message.edit_text(text, reply_markup=keyboard)
+            await query.answer("◀️ Back to tournament")
+        except Exception as e:
+            if "MESSAGE_NOT_MODIFIED" not in str(e):
+                raise
+            await query.answer("Already on main view!")
+    except Exception as e:
+        print(f"Error in back callback: {e}")
+        await query.answer("❌ Error!", show_alert=True)
         print(f"Error in tournament end: {e}")
         await query.answer(f"❌ Error: {str(e)}", show_alert=True)
         if success and results:
