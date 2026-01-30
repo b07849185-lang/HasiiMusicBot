@@ -117,23 +117,37 @@ class TournamentHelper:
             if not tournament or tournament["status"] != "active":
                 return False, None
             
-            # Calculate team scores
+            is_team_mode = tournament["tournament_type"] == "team"
             team_scores = {}
-            for team_name, player_ids in tournament["teams"].items():
-                team_score = sum(
-                    tournament["scores"].get(str(pid), 0) for pid in player_ids
-                )
-                team_scores[team_name] = {
-                    "score": team_score,
-                    "players": len(player_ids)
-                }
+            winner = None
             
-            # Determine winner
-            if tournament["tournament_type"] == "team":
+            if is_team_mode:
+                # Calculate team scores
+                for team_name, player_ids in tournament["teams"].items():
+                    team_score = sum(
+                        tournament["scores"].get(str(pid), 0) for pid in player_ids
+                    )
+                    team_scores[team_name] = {
+                        "score": team_score,
+                        "players": len(player_ids)
+                    }
+                
+                # Determine winner
                 winner = max(team_scores.items(), key=lambda x: x[1]["score"])[0]
             else:
-                winner_id = max(tournament["scores"].items(), key=lambda x: x[1])[0]
-                winner = winner_id
+                # Solo mode - build player scores with names
+                for pid in tournament.get("players", []):
+                    player = await players_col.find_one({"user_id": pid})
+                    player_name = player.get("user_name", f"User{pid}") if player else f"User{pid}"
+                    score = tournament["scores"].get(str(pid), 0)
+                    team_scores[player_name] = {
+                        "score": score,
+                        "id": pid
+                    }
+                
+                # Determine winner by name
+                if team_scores:
+                    winner = max(team_scores.items(), key=lambda x: x[1]["score"])[0]
             
             # Update tournament
             await tournaments_col.update_one(
