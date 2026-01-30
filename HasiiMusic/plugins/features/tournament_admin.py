@@ -7,7 +7,7 @@ from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from HasiiMusic import app
 from HasiiMusic.helpers._tournament import TournamentHelper
-from HasiiMusic.core.lang import language
+from HasiiMusic.core.lang import Language
 from HasiiMusic.helpers._admins import is_admin
 
 GAME_TYPES = {

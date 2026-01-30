@@ -7,7 +7,7 @@ from pyrogram import filters
 from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
 from HasiiMusic import app
 from HasiiMusic.helpers._tournament import TournamentHelper
-from HasiiMusic.core.lang import language
+from HasiiMusic.core.lang import Language
 
 
 @app.on_message(filters.command(["join", "jointeam", "register"]) & filters.group)
