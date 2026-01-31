@@ -270,59 +270,47 @@ class TgCall(PyTgCalls):
                     except Exception:
                         pass
             elif "CHAT_ADMIN_REQUIRED" in error_str or "phone.CreateGroupCall" in error_str:
-                # When we get CHAT_ADMIN_REQUIRED, we need to determine if:
-                # 1. Voice chat is disabled in group settings, OR
-                # 2. Assistant lacks admin permissions
+                # CHAT_ADMIN_REQUIRED can mean:
+                # 1. Voice chat is disabled in group settings (even with full admin rights)
+                # 2. Assistant lacks required admin permissions
+                # We must check permissions FIRST to determine which case it is
                 await self.stop(chat_id)
                 if message:
                     try:
-                        # First, check if assistant has the required permissions
-                        has_vc_permission = False
-                        assistant = None
+                        # STRICT CHECK: Verify assistant has explicit VC management permission
+                        vc_is_disabled = False
+                        
                         try:
                             assistant = await db.get_assistant(chat_id)
                             assistant_member = await app.get_chat_member(chat_id, assistant.id)
                             
-                            # Check if assistant is admin with voice chat permission
-                            if assistant_member.status in [
-                                enums.ChatMemberStatus.ADMINISTRATOR,
-                                enums.ChatMemberStatus.OWNER
-                            ]:
-                                # Owner always has all permissions
-                                if assistant_member.status == enums.ChatMemberStatus.OWNER:
-                                    has_vc_permission = True
-                                # Check if admin has voice chat permission
-                                elif assistant_member.privileges and assistant_member.privileges.can_manage_video_chats:
-                                    has_vc_permission = True
-                        except Exception:
-                            pass
+                            # Log for debugging
+                            logger.info(f"Assistant status in {chat_id}: {assistant_member.status}")
+                            if hasattr(assistant_member, 'privileges') and assistant_member.privileges:
+                                logger.info(f"Assistant privileges - can_manage_video_chats: {assistant_member.privileges.can_manage_video_chats}")
+                            
+                            # If assistant is OWNER, they have all permissions
+                            if assistant_member.status == enums.ChatMemberStatus.OWNER:
+                                vc_is_disabled = True
+                                logger.info(f"Assistant is OWNER → VC must be disabled")
+                            # If assistant is ADMIN, check explicit can_manage_video_chats permission
+                            elif assistant_member.status == enums.ChatMemberStatus.ADMINISTRATOR:
+                                if assistant_member.privileges and assistant_member.privileges.can_manage_video_chats:
+                                    vc_is_disabled = True
+                                    logger.info(f"Assistant is ADMIN with VC permission → VC must be disabled")
+                                else:
+                                    logger.info(f"Assistant is ADMIN but lacks can_manage_video_chats → permissions missing")
+                            else:
+                                logger.info(f"Assistant is not admin → permissions missing")
+                        except Exception as perm_error:
+                            logger.error(f"Error checking assistant permissions: {perm_error}")
                         
-                        # Now check if there's an active voice chat
-                        has_active_vc = False
-                        try:
-                            chat = await app.get_chat(chat_id)
-                            # If chat has active_usernames or we can get full chat info, check for active call
-                            if hasattr(chat, 'call') and chat.call:
-                                has_active_vc = True
-                            elif assistant:
-                                # Try to check if assistant can see an active call
-                                try:
-                                    call_info = await assistant.get_call(chat_id)
-                                    if call_info:
-                                        has_active_vc = True
-                                except:
-                                    pass
-                        except Exception:
-                            pass
-                        
-                        # Decision logic:
-                        # If assistant HAS permissions but NO active VC → VC is disabled
-                        # If assistant LACKS permissions → show permission request
-                        if has_vc_permission and not has_active_vc:
-                            # Assistant has permissions but can't create call → VC must be disabled
+                        # STRICT DECISION LOGIC:
+                        if vc_is_disabled:
+                            # Assistant has full permissions → VC must be disabled in group settings
                             await message.edit_text(_lang["error_vc_disabled"])
-                        elif not has_vc_permission:
-                            # Assistant needs admin permissions with VC management
+                        else:
+                            # Assistant lacks permissions → request admin rights
                             await message.edit_text(
                                 f"<blockquote><b>🔐 Bot Admin Required</b></blockquote>\n\n"
                                 f"<blockquote>To play music in this chat, I need to be an <b>administrator</b>.\n\n"
@@ -332,11 +320,8 @@ class TgCall(PyTgCalls):
                                 f"• Delete Messages\n\n"
                                 f"Please promote me as admin with the required permissions.</blockquote>"
                             )
-                        else:
-                            # Has permissions and VC is active but still failed - show VC disabled as safest option
-                            await message.edit_text(_lang["error_vc_disabled"])
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.error(f"Error handling CHAT_ADMIN_REQUIRED: {e}")
             elif "GROUPCALL_INVALID" in error_str or "GROUPCALL" in error_str:
                 await self.stop(chat_id)
                 if message:
