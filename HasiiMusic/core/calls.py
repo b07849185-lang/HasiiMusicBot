@@ -384,7 +384,10 @@ class TgCall(PyTgCalls):
                             await self.play_media(chat_id, msg, media)
                         except errors.ChannelPrivate:
                             logger.warning(f"Bot removed from {chat_id}, cleaning up")
-                            await self.leave_call(chat_id)
+                            try:
+                                await self.leave_call(chat_id)
+                            except (AttributeError, Exception) as leave_ex:
+                                logger.debug(f"Could not leave call for {chat_id}: {leave_ex}")
                             await db.rm_chat(chat_id)
                         return
                 

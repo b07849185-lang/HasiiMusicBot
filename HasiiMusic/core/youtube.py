@@ -329,7 +329,8 @@ class YouTube:
                         if not Path(filename).exists():
                             # Wait for filesystem operations to complete
                             import time
-                            time.sleep(2.0)  # Increased wait time for slower filesystems
+                            import glob
+                            time.sleep(3.0)  # Longer wait for slower filesystems
                             if Path(filename).exists():
                                 return filename
                             
@@ -344,9 +345,18 @@ class YouTube:
                                 except Exception as rename_ex:
                                     logger.error(f"❌ Failed to rename .part file: {rename_ex}")
                                     return None
-                            else:
-                                logger.warning(f"⚠️ Download completed but file not found: {filename}")
-                                return None
+                            
+                            # Try to find any variant of the file (different extension)
+                            video_id_pattern = str(Path(filename).stem)
+                            possible_files = glob.glob(f"downloads/{video_id_pattern}.*")
+                            if possible_files:
+                                # Use the first match
+                                found_file = possible_files[0]
+                                logger.info(f"✅ Found alternative file: {found_file}")
+                                return found_file
+                            
+                            logger.warning(f"⚠️ Download completed but file not found: {filename}")
+                            return None
                         return filename
                     except yt_dlp.utils.ExtractorError as ex:
                         error_msg = str(ex)
