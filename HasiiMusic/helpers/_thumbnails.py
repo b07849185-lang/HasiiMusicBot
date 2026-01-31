@@ -76,20 +76,28 @@ class Thumbnail:
             return output_path
 
     async def generate(self, song: Track, size=(1280, 720)) -> str:
-        # **PERFORMANCE FIX**: Run PIL operations in thread executor to avoid blocking event loop
-        # This prevents lag when generating thumbnails for multiple groups simultaneously
-        return await asyncio.get_event_loop().run_in_executor(None, self._generate_sync, song, size)
-
-    def _generate_sync(self, song: Track, size=(1280, 720)) -> str:
-        """Synchronous thumbnail generation - runs in thread pool"""
+        """Generate thumbnail - downloads async, PIL operations in thread pool"""
         try:
             temp = f"cache/temp_{song.id}.jpg"
             output = f"cache/{song.id}_modern.png"
             if os.path.exists(output):
                 return output
 
-            # Download and prepare base image
+            # Download thumbnail (async operation)
             await self.save_thumb(temp, song.thumbnail)
+            
+            # **PERFORMANCE FIX**: Run PIL operations in thread executor to avoid blocking event loop
+            # This prevents lag when generating thumbnails for multiple groups simultaneously
+            return await asyncio.get_event_loop().run_in_executor(
+                None, self._generate_sync, temp, output, song, size
+            )
+        except Exception:
+            return config.DEFAULT_THUMB
+
+    def _generate_sync(self, temp: str, output: str, song: Track, size=(1280, 720)) -> str:
+        """Synchronous PIL operations - runs in thread pool"""
+        try:
+            # Prepare base image
             with Image.open(temp) as temp_img:
                 base = temp_img.resize(size).convert("RGBA")
 
