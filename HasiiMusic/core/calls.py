@@ -259,31 +259,18 @@ class TgCall(PyTgCalls):
                 except Exception:
                     pass
         except errors.RPCError as e:
-            # Handle Telegram API errors (GROUPCALL_INVALID, CHAT_ADMIN_REQUIRED, etc.)
+            # Handle Telegram API errors
             error_str = str(e)
             
-            # Check for VC disabled errors first (specific errors indicating VC is off)
-            if any(x in error_str for x in ["GROUPCALL_FORBIDDEN", "GROUPCALL_CREATE_FORBIDDEN", "VOICE_MESSAGES_FORBIDDEN"]):
+            # When trying to play in a voice chat, CHAT_ADMIN_REQUIRED usually means VC is disabled
+            # (not that permissions are missing). This is because:
+            # - If VC is disabled, Telegram returns CHAT_ADMIN_REQUIRED when trying to start it
+            # - If VC is enabled but assistant lacks permissions, error happens earlier (during join)
+            if any(x in error_str for x in ["CHAT_ADMIN_REQUIRED", "phone.CreateGroupCall", "GROUPCALL_FORBIDDEN", "GROUPCALL_CREATE_FORBIDDEN", "VOICE_MESSAGES_FORBIDDEN"]):
                 await self.stop(chat_id)
                 if message:
                     try:
                         await message.edit_text(_lang["error_vc_disabled"])
-                    except Exception:
-                        pass
-            elif "CHAT_ADMIN_REQUIRED" in error_str or "phone.CreateGroupCall" in error_str:
-                # Assistant needs admin permissions to manage VC
-                await self.stop(chat_id)
-                if message:
-                    try:
-                        await message.edit_text(
-                            f"<blockquote><b>🔐 Bot Admin Required</b></blockquote>\n\n"
-                            f"<blockquote>To play music in this chat, I need to be an <b>administrator</b>.\n\n"
-                            f"<b>Required permissions:</b>\n"
-                            f"• Manage Voice Chats\n"
-                            f"• Invite Users via Link\n"
-                            f"• Delete Messages\n\n"
-                            f"Please promote me as admin with the required permissions.</blockquote>"
-                        )
                     except Exception:
                         pass
             elif "GROUPCALL_INVALID" in error_str or "GROUPCALL" in error_str:
