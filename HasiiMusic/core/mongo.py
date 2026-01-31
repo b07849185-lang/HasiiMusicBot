@@ -139,11 +139,12 @@ class MongoDB:
     async def get_admins(self, chat_id: int, reload: bool = False) -> list[int]:
         from HasiiMusic.helpers._admins import reload_admins
 
-        # Cache admin list for 5 minutes to reduce API calls
+        # **PERFORMANCE FIX**: Increased cache from 5 to 15 minutes
+        # Reduces MongoDB queries during peak load (15-20 concurrent streams)
         current_time = time()
         cache_age = current_time - self.admin_cache_time.get(chat_id, 0)
 
-        if chat_id not in self.admin_list or reload or cache_age > 300:
+        if chat_id not in self.admin_list or reload or cache_age > 900:  # 15 minutes
             self.admin_list[chat_id] = await reload_admins(chat_id)
             self.admin_cache_time[chat_id] = current_time
         return self.admin_list[chat_id]

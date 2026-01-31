@@ -43,6 +43,10 @@ class YouTube:
         self.search_cache = {}  # {"query_video": (result, timestamp)}
         self.cache_time = {}  # Deprecated, using tuple in search_cache instead
 
+        # **PERFORMANCE FIX**: Limit concurrent downloads to prevent bandwidth saturation
+        # With 15-20 groups, unlimited concurrent downloads cause 320+ connections
+        self._download_semaphore = asyncio.Semaphore(5)  # Max 5 simultaneous downloads
+
     def get_cookies(self):
         if not self.checked:
             for file in os.listdir("HasiiMusic/cookies"):
@@ -285,94 +289,103 @@ class YouTube:
         if Path(filename).exists():
             return filename
 
-        cookie = self.get_cookies()
-        base_opts = {
-            "outtmpl": "downloads/%(id)s.%(ext)s",
-            "quiet": True,
-            "noplaylist": True,
-            "geo_bypass": True,
-            "no_warnings": True,
-            "overwrites": False,
-            "nocheckcertificate": True,
-            "cookiefile": cookie,
-            "continuedl": True,
-            "noprogress": True,
-            "concurrent_fragment_downloads": 16,
-            "http_chunk_size": 1048576,  # 1MB chunks
-            "socket_timeout": 15,
-            "retries": 1,
-            "fragment_retries": 1,
-            "ignoreerrors": True,
-        }
+        # **PERFORMANCE FIX**: Use semaphore to limit concurrent downloads
+        # Prevents bandwidth saturation when 15-20 groups download simultaneously
+        async with self._download_semaphore:
+            cookie = self.get_cookies()
+            base_opts = {
+                "outtmpl": "downloads/%(id)s.%(ext)s",
+                "quiet": True,
+                "noplaylist": True,
+                "geo_bypass": True,
+                "no_warnings": True,
+                "overwrites": False,
+                "nocheckcertificate": True,
+                "cookiefile": cookie,
+                "continuedl": True,
+                "noprogress": True,
+                # **PERFORMANCE FIX**: Reduced from 16 to 8 fragments for stability
+                # 8 fragments × 5 concurrent = 40 connections (vs 320 before)
+                "concurrent_fragment_downloads": 8,
+                "http_chunk_size": 1048576,  # 1MB chunks
+                "socket_timeout": 15,
+                "retries": 1,
+                "fragment_retries": 1,
+                "ignoreerrors": True,
+            }
 
-        # High-quality audio: Opus codec in WebM container for best quality
-        ydl_opts = {
-            **base_opts,
-            "format": "bestaudio[ext=webm][acodec=opus]/bestaudio[acodec=opus]/bestaudio",
-            "postprocessors": [],  # No post-processing to preserve original quality
-        }
+            # High-quality audio: Opus codec in WebM container for best quality
+            ydl_opts = {
+                **base_opts,
+                "format": "bestaudio[ext=webm][acodec=opus]/bestaudio[acodec=opus]/bestaudio",
+                "postprocessors": [],  # No post-processing to preserve original quality
+            }
 
-        def _download():
-            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-                try:
-                    ydl.download([url])
-                    # Check if file was actually downloaded (handle .part rename issues)
-                    if not Path(filename).exists():
-                        # Wait for filesystem operations to complete
-                        import time
-                        time.sleep(2.0)  # Increased wait time for slower filesystems
-                        if Path(filename).exists():
-                            return filename
-                        
-                        # Try to find .part file and rename it
-                        part_file = Path(f"{filename}.part")
-                        if part_file.exists():
-                            try:
-                                import shutil
-                                shutil.move(str(part_file), filename)
-                                logger.info(f"✅ Renamed {part_file} to {filename}")
+            def _download():
+                with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                    try:
+                        ydl.download([url])
+                        # Check if file was actually downloaded (handle .part rename issues)
+                        if not Path(filename).exists():
+                            # Wait for filesystem operations to complete
+                            import time
+                            time.sleep(2.0)  # Increased wait time for slower filesystems
+                            if Path(filename).exists():
                                 return filename
-                            except Exception as rename_ex:
-                                logger.error(f"❌ Failed to rename .part file: {rename_ex}")
+                            
+                            # Try to find .part file and rename it
+                            part_file = Path(f"{filename}.part")
+                            if part_file.exists():
+                                try:
+                                    import shutil
+                                    shutil.move(str(part_file), filename)
+                                    logger.info(f"✅ Renamed {part_file} to {filename}")
+                                    return filename
+                                except Exception as rename_ex:
+                                    logger.error(f"❌ Failed to rename .part file: {rename_ex}")
+                                    return None
+                            else:
+                                logger.warning(f"⚠️ Download completed but file not found: {filename}")
                                 return None
+                        return filename
+                    except yt_dlp.utils.ExtractorError as ex:
+                        error_msg = str(ex)
+                        if "Sign in to confirm" in error_msg or "bot" in error_msg.lower():
+                            logger.warning(
+                                f"⚠️ YouTube bot detection for {video_id}. This is temporary.")
+                        elif "not available" in error_msg.lower():
+                            logger.error(
+                                "❌ Video not available: May be region-blocked or private.")
+                        elif "age" in error_msg.lower():
+                            logger.error(
+                                "❌ Age-restricted video: Cookies required.")
                         else:
-                            logger.warning(f"⚠️ Download completed but file not found: {filename}")
-                            return None
-                    return filename
-                except yt_dlp.utils.ExtractorError as ex:
-                    error_msg = str(ex)
-                    if "Sign in to confirm" in error_msg or "bot" in error_msg.lower():
-                        logger.warning(
-                            f"⚠️ YouTube bot detection for {video_id}. This is temporary.")
-                    elif "not available" in error_msg.lower():
-                        logger.error(
-                            "❌ Video not available: May be region-blocked or private.")
-                    elif "age" in error_msg.lower():
-                        logger.error(
-                            "❌ Age-restricted video: Cookies required.")
-                    else:
-                        logger.error("❌ YouTube extraction failed: %s", ex)
-                    return None
-                except yt_dlp.utils.DownloadError as ex:
-                    error_msg = str(ex)
-                    if "416" in error_msg or "Requested range not satisfiable" in error_msg:
-                        # HTTP 416 - file partially downloaded, delete and retry won't help
-                        logger.warning(f"⚠️ Range error for {video_id}, skipping")
-                    elif "failed to load cookies" in error_msg.lower() or "netscape format" in error_msg.lower():
-                        logger.error(
-                            "❌ Corrupted cookie file detected, removing: %s", cookie)
-                        # Remove corrupted cookie from list and filesystem
-                        if cookie and cookie in self.cookies:
-                            self.cookies.remove(cookie)
-                        try:
-                            os.remove(f"HasiiMusic/cookies/{cookie}")
-                        except:
-                            pass
-                    else:
-                        logger.warning(f"⚠️ Download error for {video_id}: {ex}")
-                    return None
-                except Exception as ex:
-                    logger.warning(f"⚠️ Unexpected download error for {video_id}: {ex}")
+                            logger.error("❌ YouTube extraction failed: %s", ex)
+                        return None
+                    except yt_dlp.utils.DownloadError as ex:
+                        error_msg = str(ex)
+                        if "416" in error_msg or "Requested range not satisfiable" in error_msg:
+                            # HTTP 416 - file partially downloaded, delete and retry won't help
+                            logger.warning(f"⚠️ Range error for {video_id}, skipping")
+                        elif "failed to load cookies" in error_msg.lower() or "netscape format" in error_msg.lower():
+                            logger.error(
+                                "❌ Corrupted cookie file detected, removing: %s", cookie)
+                            # Remove corrupted cookie from list and filesystem
+                            if cookie and cookie in self.cookies:
+                                self.cookies.remove(cookie)
+                            try:
+                                os.remove(f"HasiiMusic/cookies/{cookie}")
+                            except:
+                                pass
+                        else:
+                            logger.warning(f"⚠️ Download error for {video_id}: {ex}")
+                        return None
+                    except Exception as ex:
+                        logger.warning(f"⚠️ Unexpected download error for {video_id}: {ex}")
+                        return None
+
+            # Run blocking download in thread pool to avoid blocking event loop
+            return await asyncio.get_event_loop().run_in_executor(None, _download)
                     return None
             return filename
 

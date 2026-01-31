@@ -10,10 +10,12 @@
 # - Social media icons
 # - Responsive text sizing
 # - Image caching for performance
+# - Non-blocking PIL operations (runs in thread executor)
 # ==============================================================================
 
 import os
 import re
+import asyncio
 import aiohttp
 from PIL import Image, ImageDraw, ImageEnhance, ImageFilter, ImageFont
 
@@ -74,6 +76,12 @@ class Thumbnail:
             return output_path
 
     async def generate(self, song: Track, size=(1280, 720)) -> str:
+        # **PERFORMANCE FIX**: Run PIL operations in thread executor to avoid blocking event loop
+        # This prevents lag when generating thumbnails for multiple groups simultaneously
+        return await asyncio.get_event_loop().run_in_executor(None, self._generate_sync, song, size)
+
+    def _generate_sync(self, song: Track, size=(1280, 720)) -> str:
+        """Synchronous thumbnail generation - runs in thread pool"""
         try:
             temp = f"cache/temp_{song.id}.jpg"
             output = f"cache/{song.id}_modern.png"
