@@ -45,7 +45,7 @@ async def main():
         # Step 5.5: Start tournament timer monitor
         try:
             from HasiiMusic.helpers._tournament import start_timer_monitor
-            start_timer_monitor()
+            await start_timer_monitor()
         except Exception as e:
             logger.error(f"Failed to start tournament timer: {e}")
 
