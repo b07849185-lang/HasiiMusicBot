@@ -96,8 +96,8 @@ class Inline:
                 ]
             ]
         else:
-            cbs = ["admins", "auth", "blist", "games", "lang",
-                   "ping", "play", "queue", "stats", "sudo"]
+            cbs = ["admins", "auth", "blist", "sudo", "lang",
+                   "ping", "play", "queue", "stats", "games"]
             buttons = [
                 self.ikb(text=_lang[f"help_btn_{cb}"], callback_data=f"help {cb}")
                 for cb in cbs
