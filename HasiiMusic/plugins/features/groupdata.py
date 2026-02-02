@@ -1,5 +1,5 @@
 from pyrogram import Client, filters
-from pyrogram.enums import ChatType, ParseMode, ChatMemberStatus
+from pyrogram.enums import ChatType, ParseMode, ChatMemberStatus, ChatMembersFilter
 from pyrogram.types import Message
 
 from HasiiMusic import app
@@ -20,17 +20,40 @@ async def group_data_handler(client: Client, message: Message):
         total_members = 0
         admin_count = 0
         bot_count = 0
+        banned_count = 0
+        deleted_count = 0
+        premium_count = 0
         
         try:
             total_members = await client.get_chat_members_count(chat_id)
             
             # Count admins
-            async for member in client.get_chat_members(chat_id, filter="administrators"):
+            async for member in client.get_chat_members(chat_id, filter=ChatMembersFilter.ADMINISTRATORS):
                 admin_count += 1
             
             # Count bots
-            async for _ in client.get_chat_members(chat_id, filter="bots"):
+            async for _ in client.get_chat_members(chat_id, filter=ChatMembersFilter.BOTS):
                 bot_count += 1
+                
+            # Count banned users
+            try:
+                async for _ in client.get_chat_members(chat_id, filter=ChatMembersFilter.BANNED):
+                    banned_count += 1
+            except Exception:
+                pass
+            
+            # Iterate through recent members to count deleted accounts and premium users
+            try:
+                member_sample = 0
+                async for member in client.get_chat_members(chat_id, filter=ChatMembersFilter.SEARCH, limit=200):
+                    member_sample += 1
+                    if member.user.is_deleted:
+                        deleted_count += 1
+                    if member.user.is_premium:
+                        premium_count += 1
+            except Exception:
+                pass
+                
         except Exception:
             pass
         
@@ -53,6 +76,15 @@ async def group_data_handler(client: Client, message: Message):
         info_lines.append(f"\n<b>👥 ᴍᴇᴍʙᴇʀꜱ:</b> {total_members}")
         info_lines.append(f"<b>👮 ᴀᴅᴍɪɴꜱ:</b> {admin_count}")
         info_lines.append(f"<b>🤖 ʙᴏᴛꜱ:</b> {bot_count}")
+        
+        if banned_count > 0:
+            info_lines.append(f"<b>🚫 ʙᴀɴɴᴇᴅ:</b> {banned_count}")
+        
+        if deleted_count > 0:
+            info_lines.append(f"<b>👻 ᴅᴇʟᴇᴛᴇᴅ ᴀᴄᴄᴏᴜɴᴛꜱ:</b> {deleted_count}")
+            
+        if premium_count > 0:
+            info_lines.append(f"<b>⭐ ᴘʀᴇᴍɪᴜᴍ ᴜꜱᴇʀꜱ:</b> {premium_count}")
         
         # Description if available
         if chat_info.description:
