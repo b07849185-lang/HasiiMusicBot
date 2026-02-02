@@ -23,12 +23,20 @@ async def _safe_reply_text(message: Message, text: str):
 async def on_voice_chat_started(_, message: Message):
     """Handler for voice chat started event"""
     await _safe_reply_text(message, "🎙 <b>ᴠᴏɪᴄᴇ ᴄʜᴀᴛ ʜᴀs sᴛᴀʀᴛᴇᴅ!</b>")
+    try:
+        await message.delete()
+    except Exception:
+        pass
 
 
 @app.on_message(filters.video_chat_ended & filters.group)
 async def on_voice_chat_ended(_, message: Message):
     """Handler for voice chat ended event"""
     await _safe_reply_text(message, "🔕 <b>ᴠᴏɪᴄᴇ ᴄʜᴀᴛ ᴇɴᴅᴇᴅ.</b>")
+    try:
+        await message.delete()
+    except Exception:
+        pass
 
 
 @app.on_message(filters.video_chat_members_invited & filters.group)
@@ -57,3 +65,7 @@ async def on_voice_chat_members_invited(_, message: Message):
             message,
             f"👥 {inviter} <b>ɪɴᴠɪᴛᴇᴅ</b> {', '.join(invited)} <b>ᴛᴏ ᴛʜᴇ ᴠᴏɪᴄᴇ ᴄʜᴀᴛ.</b> 😉",
         )
+        try:
+            await message.delete()
+        except Exception:
+            pass
