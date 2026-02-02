@@ -112,12 +112,15 @@ async def play_hndlr(
                 "ᴍᴀᴋᴇ ꜱᴜʀᴇ ɪ'ᴍ ᴀᴅᴍɪɴ ɪɴ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ ᴀɴᴅ ᴄʜᴀɴɴᴇʟ ᴘʟᴀʏ ɪꜱ ꜱᴇᴛ ᴄᴏʀʀᴇᴄᴛʟʏ."
             )
 
+    # Select random emoji for this play session
+    random_emoji = random.choice(PLAY_EMOJIS)
+    
     try:
-        sent = await m.reply_text(m.lang["play_searching"])
+        sent = await m.reply_text(m.lang["play_searching"].format(random_emoji))
     except FloodWait as e:
         await asyncio.sleep(e.value)
         try:
-            sent = await m.reply_text(m.lang["play_searching"])
+            sent = await m.reply_text(m.lang["play_searching"].format(random_emoji))
         except FloodWait as e2:
             # If still flood wait, wait longer and give up gracefully
             await asyncio.sleep(e2.value)

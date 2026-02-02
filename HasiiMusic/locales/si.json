@@ -85,7 +85,7 @@
   "play_now": "Play Now",
   "play_next": "<blockquote>පොඩ්ඩක් ඉන්න...\n\nQueue එකේ ඊළඟ එක download කරනවා.</blockquote>",
   "play_invite": "<blockquote>පොඩ්ඩක් ඉන්න...\n\n{0} Assistant ව ඔයාගේ Chat එකට invite කරනවා.</blockquote>",
-  "play_searching": "🔎",
+  "play_searching": "{0}",
   "play_paused": "<blockquote><b>Stream එක {0} විසින් pause කළා</b></blockquote>",
   "play_resumed": "<blockquote><b>Stream එක {0} විසින් resume කළා</b></blockquote>",
   "play_replayed": "<blockquote><b>Stream එක {0} විසින් replay කළා</b></blockquote>",
