@@ -1,6 +1,6 @@
 from pyrogram import filters
 from pyrogram.types import Message
-from pyrogram.enums import ChatMembersFilter
+from pyrogram.enums import ChatMembersFilter, ParseMode
 
 from HasiiMusic import app
 
@@ -14,24 +14,24 @@ async def list_bots(client, message: Message):
         bot_count = 0
         
         # Send initial message
-        status_msg = await message.reply_text("🔍 **Scanning for bots...**")
+        status_msg = await message.reply_text("🔍 <b>Scanning for bots...</b>", parse_mode=ParseMode.HTML)
         
         # Iterate through all members and filter bots
         async for member in client.get_chat_members(message.chat.id, filter=ChatMembersFilter.BOTS):
             bot_count += 1
             bot_username = f"@{member.user.username}" if member.user.username else "No Username"
-            bot_list.append(f"{bot_count}. [{member.user.first_name}](tg://user?id={member.user.id}) - {bot_username}")
+            bot_list.append(f"<blockquote>{bot_count}. <a href='tg://user?id={member.user.id}'>{member.user.first_name}</a> - {bot_username}</blockquote>")
         
         if bot_count == 0:
-            await status_msg.edit_text("❌ **No bots found in this group.**")
+            await status_msg.edit_text("❌ <b>No bots found in this group.</b>", parse_mode=ParseMode.HTML)
             return
         
         # Format the response
-        response = f"🤖 **Bots in {message.chat.title}**\n\n"
+        response = f"🤖 <b>Bots in {message.chat.title}</b>\n\n"
         response += "\n".join(bot_list)
-        response += f"\n\n📊 **Total Bots:** {bot_count}"
+        response += f"\n\n📊 <b>Total Bots:</b> {bot_count}"
         
-        await status_msg.edit_text(response, disable_web_page_preview=True)
+        await status_msg.edit_text(response, disable_web_page_preview=True, parse_mode=ParseMode.HTML)
         
     except Exception as e:
-        await message.reply_text(f"⚠️ **Error:** {str(e)}")
+        await message.reply_text(f"⚠️ <b>Error:</b> {str(e)}", parse_mode=ParseMode.HTML)
