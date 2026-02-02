@@ -1,7 +1,8 @@
 from pyrogram import Client, filters
 from pyrogram.enums import ChatType, ParseMode, ChatMemberStatus
 from pyrogram.types import Message
-from HasiiMusic.core.telegram import app
+
+from HasiiMusic import app
 
 
 @app.on_message(filters.command(["groupdata", "chatinfo", "groupinfo"]) & filters.group)
