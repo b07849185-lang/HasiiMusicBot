@@ -20,7 +20,7 @@ async def list_bots(client, message: Message):
         async for member in client.get_chat_members(message.chat.id, filter=ChatMembersFilter.BOTS):
             bot_count += 1
             bot_username = f"@{member.user.username}" if member.user.username else "No Username"
-            bot_list.append(f"<blockquote>{bot_count}. <a href='tg://user?id={member.user.id}'>{member.user.first_name}</a> - {bot_username}</blockquote>")
+            bot_list.append(f"{bot_count}. <a href='tg://user?id={member.user.id}'>{member.user.first_name}</a> - {bot_username}")
         
         if bot_count == 0:
             await status_msg.edit_text("❌ <b>No bots found in this group.</b>", parse_mode=ParseMode.HTML)
@@ -28,7 +28,7 @@ async def list_bots(client, message: Message):
         
         # Format the response
         response = f"🤖 <b>Bots in {message.chat.title}</b>\n\n"
-        response += "\n".join(bot_list)
+        response += "<blockquote>" + "\n".join(bot_list) + "</blockquote>"
         response += f"\n\n📊 <b>Total Bots:</b> {bot_count}"
         
         await status_msg.edit_text(response, disable_web_page_preview=True, parse_mode=ParseMode.HTML)
