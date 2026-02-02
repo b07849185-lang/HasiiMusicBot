@@ -49,7 +49,7 @@
   "help_btn_queue": "QUEUE",
   "help_btn_stats": "STATS",
   "help_btn_sudo": "SUDO",
-  "help_admins": "<u><b>Admin Commands:</b></u>\n\n<blockquote>/pause: Play වෙන එක පොඩ්ඩකට නවත්වන්න.\n/resume: ආයෙත් play කරන්න.\n/skip: මේක අතෑරලා ඊළඟ එකට යන්න.\n/stop: Play කරන එක නවත්තන්න.\n\n</blockquote><blockquote>/seek [තත්පර]: Stream එක ඉස්සරහට ගන්න.\n/seekback [තත්පර]: Stream එක පස්සට ගන්න.</blockquote>\n<blockquote>/reload: Admin Cache එක refresh කරන්න.</blockquote>",
+  "help_admins": "<u><b>Admin Commands:</b></u>\n\n<blockquote>/pause: Play වෙන එක පොඩ්ඩකට නවත්වන්න.\n/resume: ආයෙත් play කරන්න.\n/skip: මේක අතෑරලා ඊළඟ එකට යන්න.\n/stop: Play කරන එක නවත්තන්න.\n\n</blockquote><blockquote>/seek [තත්පර]: Stream එක ඉස්සරහට ගන්න.\n/seekback [තත්පර]: Stream එක පස්සට ගන්න.</blockquote>\n<blockquote>/reload: Admin Cache එක refresh කරන්න.\n/bots: Group එකේ තියෙන හැම bots ලාම පෙන්නන්න.\n/groupdata: Group එකේ සම්පූර්ණ විස්තර පෙන්නන්න (ID, members, admins, bots, etc).\n/vcinfo හෝ /vcmembers: Voice Chat එකේ ඉන්න අය සහ ඔවුන්ගේ mute status, volume, screen sharing info පෙන්නන්න.</blockquote>",
   "help_auth": "<u><b>Auth Commands:</b></u>\nAuth Users ලට admin කෙනෙක් නොවී stream එක control කරන්න පුළුවන්.\n<blockquote>/auth: User කෙනෙක්ව Auth list එකට දාන්න.\n/unauth: User කෙනෙක්ව Auth list එකෙන් අයින් කරන්න.</blockquote>",
   "help_blist": "<u><b>Blacklist Commands:</b></u>\nBlock කරපු Chats වලටයි Users ලටයි මාව පාවිච්චි කරන්න බෑ.\n<blockquote>/blacklist [chat_id|user_id]: Chat/User කෙනෙක්ව blacklist කරන්න.\n/unblacklist [chat_id|user_id]: Chat/User කෙනෙක්ව blacklist එකෙන් අයින් කරන්න.</blockquote>",
   "help_lang": "<u><b>Language Commands:</b></u>\nමම languages ගොඩකට support කරනවා.\n<blockquote>/lang: මගේ language එක වෙනස් කරන්න.</blockquote>",

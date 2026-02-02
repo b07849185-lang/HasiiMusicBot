@@ -48,6 +48,7 @@ async def vc_info_command(client, message: Message):
         
         # Build the response
         msg_lines = ["🎧 <b>VC Members Info:</b>\n"]
+        member_list = []
         
         for p in participants:
             try:
@@ -66,8 +67,9 @@ async def vc_info_command(client, message: Message):
             if screen_status:
                 info += f" | {screen_status}"
             
-            msg_lines.append(f"<blockquote>{info}</blockquote>")
+            member_list.append(info)
         
+        msg_lines.append("<blockquote>" + "\n".join(member_list) + "</blockquote>")
         msg_lines.append(f"\n👥 <b>Total:</b> {len(participants)}")
         
         await message.reply_text(
