@@ -25,6 +25,10 @@ from HasiiMusic import app, config, db
 @app.on_message(filters.command(["channelplay"]) & filters.group & ~app.bl_users)
 async def channelplay_command(_, m: Message):
     """Enable or disable channel play mode."""
+    # Check if from_user exists (not sent by channel/anonymous admin)
+    if not m.from_user:
+        return await m.reply_text("❌ ᴛʜɪꜱ ᴄᴏᴍᴍᴀɴᴅ ᴄᴀɴɴᴏᴛ ʙᴇ ᴜꜱᴇᴅ ʙʏ ᴄʜᴀɴɴᴇʟꜱ ᴏʀ ᴀɴᴏɴʏᴍᴏᴜꜱ ᴀᴅᴍɪɴꜱ.")
+    
     # Check if user is admin
     member = await app.get_chat_member(m.chat.id, m.from_user.id)
     if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.OWNER]:

@@ -134,14 +134,52 @@ class TgCall(PyTgCalls):
             else:
                 logger.error(f"No file path for media in {chat_id}")
                 return
+        
+        # Validate chat_id - check if it's a valid channel/group
+        try:
+            chat = await app.get_chat(chat_id)
+            if chat.type not in [enums.ChatType.SUPERGROUP, enums.ChatType.GROUP, enums.ChatType.CHANNEL]:
+                logger.error(f"Invalid chat type for {chat_id}: {chat.type}")
+                if message:
+                    await message.edit_text("❌ ᴄᴀɴ ᴏɴʟʏ ᴘʟᴀʏ ɪɴ ɢʀᴏᴜᴘꜱ/ᴄʜᴀɴɴᴇʟꜱ.")
+                return
+            # For channels, verify assistant is member
+            if chat.type == enums.ChatType.CHANNEL:
+                try:
+                    assistant_member = await app.get_chat_member(chat_id, client.me.id)
+                    if assistant_member.status == enums.ChatMemberStatus.BANNED:
+                        logger.error(f"Assistant banned in channel {chat_id}")
+                        if message:
+                            await message.edit_text("❌ ᴀꜱꜱɪꜱᴛᴀɴᴛ ɪꜱ ʙᴀɴɴᴇᴅ ɪɴ ᴛʜɪꜱ ᴄʜᴀɴɴᴇʟ.")
+                        await db.set_cmode(chat_id, None)  # Disable channel play
+                        return
+                except errors.RPCError as e:
+                    if "CHANNEL_INVALID" in str(e) or "USER_NOT_PARTICIPANT" in str(e):
+                        logger.error(f"Assistant not in channel {chat_id}: {e}")
+                        if message:
+                            await message.edit_text(
+                                "❌ <b>ᴀꜱꜱɪꜱᴛᴀɴᴛ ɴᴏᴛ ɪɴ ᴄʜᴀɴɴᴇʟ!</b>\n\n"
+                                f"<blockquote>ᴘʟᴇᴀꜱᴇ ᴀᴅᴅ @{client.me.username} ᴛᴏ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ ᴀꜱ ᴀᴅᴍɪɴ ᴡɪᴛʜ ᴠᴏɪᴄᴇ ᴄʜᴀᴛ ᴘᴇʀᴍɪꜱꜱɪᴏɴꜱ.</blockquote>"
+                            )
+                        await db.set_cmode(chat_id, None)  # Disable channel play
+                        return
+        except errors.RPCError as e:
+            if "CHANNEL_INVALID" in str(e):
+                logger.error(f"Invalid channel {chat_id}: {e}")
+                if message:
+                    await message.edit_text("❌ ɪɴᴠᴀʟɪᴅ ᴄʜᴀɴɴᴇʟ. ᴅɪꜱᴀʙʟɪɴɢ ᴄʜᴀɴɴᴇʟ ᴘʟᴀʏ.")
+                await db.set_cmode(chat_id, None)  # Disable channel play
+                return
+            raise
 
-        # Configure audio stream
+        # Configure audio stream with memory optimization
+        ffmpeg_params = f"-ss {seek_time}" if seek_time > 1 else "-probesize 32 -analyzeduration 0"
         stream = types.MediaStream(
             media_path=media.file_path,
             audio_parameters=types.AudioQuality.STUDIO,
             audio_flags=types.MediaStream.Flags.REQUIRED,
             video_flags=types.MediaStream.Flags.IGNORE,
-            ffmpeg_parameters=f"-ss {seek_time}" if seek_time > 1 else None,
+            ffmpeg_parameters=ffmpeg_params,
         )
         
         # Check if already connected, if so leave first to avoid "Connection cannot be initialized more than once"
