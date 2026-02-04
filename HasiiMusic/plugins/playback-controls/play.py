@@ -230,6 +230,15 @@ async def play_hndlr(
                 except Exception:
                     # Can't send message, continue anyway
                     pass
+            
+            # ✨ NEW: Start preloading queued tracks in background
+            try:
+                from HasiiMusic import preload
+                asyncio.create_task(preload.start_preload(chat_id, count=2))
+            except Exception:
+                # Non-critical, continue without preload
+                pass
+            
             return
 
     if not file.file_path:

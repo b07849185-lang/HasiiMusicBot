@@ -20,7 +20,7 @@ from pyrogram.types import InputMediaPhoto, Message
 from pytgcalls import PyTgCalls, exceptions, types
 from pytgcalls.pytgcalls_session import PyTgCallsSession
 
-from HasiiMusic import app, config, db, lang, logger, queue, userbot, yt
+from HasiiMusic import app, config, db, lang, logger, preload, queue, userbot, yt
 from HasiiMusic.helpers import Media, Track, buttons, thumb
 
 # Suppress pytgcalls UpdateGroupCall errors (library bug - harmless)
@@ -87,6 +87,13 @@ class TgCall(PyTgCalls):
 
     async def stop(self, chat_id: int) -> None:
         client = await db.get_assistant(chat_id)
+        
+        # Cancel any active preload tasks when stopping
+        try:
+            await preload.cancel_preload(chat_id)
+        except Exception as e:
+            logger.debug(f"Error cancelling preload for {chat_id}: {e}")
+        
         try:
             queue.clear(chat_id)
             await db.remove_call(chat_id)
@@ -314,6 +321,12 @@ class TgCall(PyTgCalls):
                     )
                     if sent_photo:
                         media.message_id = sent_photo.id
+                
+                # ✨ NEW: Start preloading next tracks in background for seamless transitions
+                try:
+                    asyncio.create_task(preload.start_preload(chat_id, count=2))
+                except Exception as e:
+                    logger.debug(f"Error starting preload for {chat_id}: {e}")
         except FileNotFoundError:
             if message:
                 try:
@@ -547,6 +560,12 @@ class TgCall(PyTgCalls):
                     # Create a temporary message or handle without UI update
                     logger.info(f"Playing next track for {chat_id} without message update")
                     await self.play_media(chat_id, None, media)
+                
+                # ✨ NEW: After playing next track, start preloading upcoming tracks
+                try:
+                    asyncio.create_task(preload.start_preload(chat_id, count=2))
+                except Exception as e:
+                    logger.debug(f"Error starting preload after play_next for {chat_id}: {e}")
             except Exception as e:
                 logger.error(f"Error in play_next for {chat_id}: {e}", exc_info=True)
                 # Try to stop the call gracefully

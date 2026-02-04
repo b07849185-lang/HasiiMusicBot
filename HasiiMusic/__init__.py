@@ -70,6 +70,10 @@ from HasiiMusic.core.youtube import YouTube
 tg = Telegram()
 yt = YouTube()
 
+# Initialize preload manager for background track downloading
+from HasiiMusic.core.preload import PreloadManager
+preload = PreloadManager()
+
 # Initialize queue manager
 from HasiiMusic.helpers import Queue
 queue = Queue()
