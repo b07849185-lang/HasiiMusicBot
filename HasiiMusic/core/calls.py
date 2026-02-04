@@ -179,24 +179,14 @@ class TgCall(PyTgCalls):
                 return
             raise
 
-        # Configure audio stream with optimized buffering to prevent lag/stuttering
+        # Configure audio stream - simple buffering for stability
+        # Using minimal, safe parameters that work reliably with PyTgCalls
         if seek_time > 1:
-            # Seeking with proper buffering
-            ffmpeg_params = f"-ss {seek_time} -probesize 2M -analyzeduration 2M"
+            ffmpeg_params = f"-ss {seek_time}"
         else:
-            # Optimized for smooth streaming with proper buffering
-            # - probesize 2M: Read 2MB to properly detect format (vs 32 bytes before!)
-            # - analyzeduration 2M: Analyze 2MB for smooth start
-            # - fflags +genpts: Generate timestamps for proper sync
-            # - bufsize 512k: Read-ahead buffer to prevent stuttering
-            # - thread_queue_size 512: Larger queue for packet processing
-            ffmpeg_params = (
-                "-probesize 2M "
-                "-analyzeduration 2M "
-                "-fflags +genpts "
-                "-bufsize 512k "
-                "-thread_queue_size 512"
-            )
+            # Just increase probesize slightly for better format detection
+            # Keeping it simple - too many parameters can break streaming
+            ffmpeg_params = "-probesize 1M -analyzeduration 0"
         stream = types.MediaStream(
             media_path=media.file_path,
             audio_parameters=types.AudioQuality.STUDIO,
