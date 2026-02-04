@@ -118,7 +118,7 @@
   "start_gp": "<blockquote>හායි,\nමම {0}\n\n<u><b>ඔයාලගේ හිතට වදින features ගොඩක් තියෙන Music Player Bot කෙනෙක්.</b></u></blockquote>",
   "start_settings": "<blockquote><u><b>{0} Settings</b></u>\n\nමේ Chat එකේ settings වෙනස් කරන්න ඕන නම් පහළ buttons click කරන්න.</blockquote>",
   "stats_fetching": "<blockquote>Stats අරන් එනකම් ඉන්න...</blockquote>",
-  "stats_sudo": "<blockquote>\n<b>Modules:</b> {0}\n<b>Platform:</b> {1}\n\n<b>Python:</b> <code>v{2}</code>\n<b>Pyrogram:</b> <code>v{3}</code>\n<b>PyTgCalls:</b> <code>v{4}</code></blockquote>",
+  "stats_sudo": "<blockquote>\n<b>Modules:</b> {0}\n<b>Platform:</b> {1}\n\n<b>RAM USAGE:</b> {2}\n<b>CPU USAGE:</b> {3}\n<b>STORAGE:</b> {4}\n\n<b>Python:</b> <code>v{5}</code>\n<b>Pyrogram:</b> <code>v{6}</code>\n<b>PyTgCalls:</b> <code>v{7}</code></blockquote>",
   "stats_user": "<blockquote><u><b>{0} Stats</b></u>\n\n<b>Assistants:</b> {1}\n<b>Auto Leave:</b> {2}\n\n<b>Blocked Chats:</b> {3}\n<b>Blocked Users:</b> {4}\n<b>Sudo Users:</b> {5}\n\n<b>Served Chats:</b> {6}\n<b>Served Users:</b> {7}</blockquote>",
   "sudo_already": "<blockquote>{0} දැනටමත් Sudo User කෙනෙක්.</blockquote>",
   "sudo_added": "<blockquote>{0} ව Sudo User list එකට add කළා.</blockquote>",

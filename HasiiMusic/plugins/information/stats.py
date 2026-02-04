@@ -33,7 +33,7 @@ from HasiiMusic import app, config, db, lang, userbot
 from HasiiMusic.plugins import all_modules
 
 
-@app.on_message(filters.command(["stats"]) & filters.group & ~app.bl_users)
+@app.on_message(filters.command(["stats"]) & filters.user(app.sudoers) & ~app.bl_users)
 @lang.language()
 async def _stats(_, m: types.Message):
     sent = await m.reply_photo(
@@ -42,6 +42,19 @@ async def _stats(_, m: types.Message):
     )
 
     pid = os.getpid()
+    cpu_percent = psutil.cpu_percent(interval=0.5)
+    cpu_count = psutil.cpu_count()
+    
+    # Get memory info
+    mem = psutil.virtual_memory()
+    used_mem = round(mem.used / (1024 ** 3), 2)  # Convert to GB
+    total_mem = round(mem.total / (1024 ** 3), 2)
+    
+    # Get disk info
+    disk = psutil.disk_usage("/")
+    used_disk = round(disk.used / (1024 ** 3), 2)  # Convert to GB
+    total_disk = round(disk.total / (1024 ** 3), 2)
+    
     _utext = m.lang["stats_user"].format(
         app.name,
         len(userbot.clients),
@@ -52,12 +65,17 @@ async def _stats(_, m: types.Message):
         len(await db.get_chats()),
         len(await db.get_users()),
     )
-    if m.from_user.id in app.sudoers:
-        _utext += m.lang["stats_sudo"].format(
-            len(all_modules),
-            platform.system(),
-            sys.version.split()[0],
-            __version__,
-            pytgver,
-        )
+    
+    # Add system stats for sudo users
+    _utext += m.lang["stats_sudo"].format(
+        len(all_modules),
+        platform.system(),
+        f"{used_mem}GB | {total_mem}GB",
+        f"{cpu_percent}% ({cpu_count} cores)",
+        f"{used_disk}GB | {total_disk}GB",
+        sys.version.split()[0],
+        __version__,
+        pytgver,
+    )
+    
     await sent.edit_caption(_utext)
