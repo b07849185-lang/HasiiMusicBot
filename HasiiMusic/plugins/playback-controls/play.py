@@ -242,12 +242,11 @@ async def play_hndlr(
         if not file.file_path:
             await safe_edit(
                 sent,
-                "❌ **Failed to download media.**\n\n"
-                "**Possible reasons:**\n"
+                "<blockquote>❌ Failed to download media.\n\n"
+                "Possible reasons:\n"
                 "• YouTube detected bot activity (update cookies)\n"
                 "• Video is region-blocked or private\n"
-                "• Age-restricted content (requires cookies)\n\n"
-                f"**Support:** {config.SUPPORT_CHAT}"
+                "• Age-restricted content (requires cookies)</blockquote>"
             )
 
     try:
