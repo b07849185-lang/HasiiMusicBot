@@ -318,31 +318,20 @@ class TgCall(PyTgCalls):
                     keyboard = buttons.controls(chat_id)
                 
                 if message:
-                    updated = await self._edit_media_with_retry(
-                        message,
-                        InputMediaPhoto(media=_thumb, caption=text),
-                        keyboard,
-                    )
-
-                    if updated is None:
-                        sent_photo = await self._send_photo_with_retry(
-                            chat_id=chat_id,
-                            photo=_thumb,
-                            caption=text,
-                            reply_markup=keyboard,
-                        )
-                        if sent_photo:
-                            media.message_id = sent_photo.id
-                else:
-                    # No message to edit, just send new one
-                    sent_photo = await self._send_photo_with_retry(
-                        chat_id=chat_id,
-                        photo=_thumb,
-                        caption=text,
-                        reply_markup=keyboard,
-                    )
-                    if sent_photo:
-                        media.message_id = sent_photo.id
+                    try:
+                        await message.delete()
+                    except Exception:
+                        pass
+                
+                # Send new photo message
+                sent_photo = await self._send_photo_with_retry(
+                    chat_id=chat_id,
+                    photo=_thumb,
+                    caption=text,
+                    reply_markup=keyboard,
+                )
+                if sent_photo:
+                    media.message_id = sent_photo.id
                 
                 # ✨ NEW: Start preloading next tracks in background for seamless transitions
                 try:
