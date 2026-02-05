@@ -72,13 +72,9 @@ class Inline:
                         text="▢", callback_data=f"controls stop {chat_id}"),
                 ]
             )
-            # Loop and Shuffle buttons row
+            # Delete button as full-width button at bottom
             keyboard.append(
                 [
-                    self.ikb(
-                        text="ʟᴏᴏᴘ", callback_data=f"controls loop {chat_id}"),
-                    self.ikb(
-                        text="ꜱʜᴜꜰꜰʟᴇ", callback_data=f"controls shuffle {chat_id}"),
                     self.ikb(
                         text="ᴅᴇʟᴇᴛᴇ", callback_data=f"controls close {chat_id}"),
                 ]
