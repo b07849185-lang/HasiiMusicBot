@@ -149,14 +149,6 @@ class Inline:
                     ),
                     self.ikb(text=admin_only, callback_data="playmode"),
                 ],
-                [
-                    self.ikb(
-                        text=lang["language"] + " ➜",
-                        callback_data=f"controls status {chat_id}",
-                    ),
-                    self.ikb(text=lang_codes[language],
-                             callback_data="language"),
-                ],
             ]
         )
 
@@ -166,6 +158,14 @@ class Inline:
         rows = [
             [
                 self.ikb(
+                    text=lang["add_me"],
+                    url=f"https://t.me/{app.username}?startgroup=true",
+                )
+            ],
+            [self.ikb(text=lang["help"], callback_data="help")],
+            [
+                self.ikb(text=lang["support"], url=config.SUPPORT_CHAT),
+                self.ikb(text=lang["channel"], url=config.SUPPORT_CHANNEL),
             ],
         ]
         if private:
@@ -177,14 +177,14 @@ class Inline:
                     )
                 ]
             ]
-        else:
-            rows += [[self.ikb(text=lang["language"],
-                               callback_data="language")]]
         return self.ikm(rows)
 
     def yt_key(self, link: str) -> types.InlineKeyboardMarkup:
         return self.ikm(
             [
+                [
+                    self.ikb(text="ᴄᴏᴘʏ ʟɪɴᴋ", copy_text=link),
+                    self.ikb(text="ᴏᴘᴇɴ ɪɴ ʏᴏᴜᴛᴜʙᴇ", url=link),
                 ],
             ]
         )
