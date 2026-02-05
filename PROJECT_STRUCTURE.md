@@ -33,6 +33,7 @@ This document provides a comprehensive overview of the project structure, explai
 - **`README.md`** - Project overview, features, and setup instructions
 - **`LICENSE`** - Software license (defines usage rights)
 - **`PROJECT_STRUCTURE.md`** - This file! Project organization guide
+- **`SECURITY.md`** - Security guidelines and best practices
 
 ---
 
@@ -54,6 +55,7 @@ Contains the fundamental building blocks of the bot.
 | `youtube.py`  | YouTube video/audio downloading and processing              |
 | `lang.py`     | Multi-language support system                               |
 | `dir.py`      | Directory management (temp files, downloads, etc.)          |
+| `preload.py`  | Background track preloading for seamless playback           |
 
 **What it does:**
 
@@ -73,9 +75,11 @@ All bot commands and event handlers, organized by category.
 
 | File           | Commands              | Description                                |
 | -------------- | --------------------- | ------------------------------------------ |
+| `autoleave.py` | `/autoleave`          | Configure auto-leave settings for assistants |
 | `broadcast.py` | `/broadcast`          | Send messages to all bot users/chats       |
 | `eval.py`      | `/eval`, `/sh`        | Execute Python/shell commands (owner only) |
-| `restart.py`   | `/restart`            | Restart the bot                            |
+| `leave.py`     | `/leave`, `/leaveall` | Make assistants leave groups               |
+| `restart.py`   | `/restart`, `/update` | Restart/update the bot                     |
 | `sudoers.py`   | `/addsudo`, `/rmsudo` | Manage sudo users                          |
 
 **Purpose:** Commands restricted to bot owner and sudo users for administration.
@@ -88,7 +92,7 @@ All bot commands and event handlers, organized by category.
 | -------------- | ---------------- | ------------------------------ |
 | `callbacks.py` | Callback queries | Handle inline button presses   |
 | `iquery.py`    | Inline queries   | Handle inline mode requests    |
-| `misc.py`      | Miscellaneous    | Bot mentions, welcome messages |
+| `misc.py`      | Miscellaneous    | Auto-leave, voice chat events  |
 | `new_chat.py`  | New chat members | Handle bot added to new groups |
 
 **Purpose:** Handle Telegram events (button clicks, inline queries, new members, etc.)
@@ -110,15 +114,19 @@ All bot commands and event handlers, organized by category.
 
 #### 📁 playback-controls/ - Music Control Commands
 
-| File        | Commands          | Description                    |
-| ----------- | ----------------- | ------------------------------ |
-| `play.py`   | `/play`, `/vplay` | Play audio/video in voice chat |
-| `pause.py`  | `/pause`          | Pause current playback         |
-| `resume.py` | `/resume`         | Resume paused playback         |
-| `skip.py`   | `/skip`           | Skip to next song in queue     |
-| `stop.py`   | `/stop`, `/end`   | Stop playback and clear queue  |
-| `seek.py`   | `/seek`           | Jump to specific timestamp     |
-| `queue.py`  | `/queue`          | Display current queue          |
+| File              | Commands          | Description                       |
+| ----------------- | ----------------- | --------------------------------- |
+| `play.py`         | `/play`, `/vplay` | Play audio/video in voice chat    |
+| `pause.py`        | `/pause`          | Pause current playback            |
+| `resume.py`       | `/resume`         | Resume paused playback            |
+| `skip.py`         | `/skip`           | Skip to next song in queue        |
+| `stop.py`         | `/stop`, `/end`   | Stop playback and clear queue     |
+| `seek.py`         | `/seek`           | Jump to specific timestamp        |
+| `shuffle.py`      | `/shuffle`        | Shuffle queue                     |
+| `loop.py`         | `/loop`           | Toggle loop mode                  |
+| `queue.py`        | `/queue`          | Display current queue             |
+| `radio.py`        | `/radio`          | Stream live radio stations        |
+| `example_radio.py`| -                 | Example radio station presets     |
 
 **Purpose:** Core music playback functionality for voice chats.
 
@@ -129,11 +137,32 @@ All bot commands and event handlers, organized by category.
 | File             | Commands                     | Description                  |
 | ---------------- | ---------------------------- | ---------------------------- |
 | `auth.py`        | `/auth`, `/unauth`           | Manage authorized users      |
-| `blacklist.py`   | `/blacklist`, `/unblacklist` | Block/unblock users          |
+| `blacklist.py`   | `/blacklist`, `/unblacklist` | Block/unblock users/chats    |
 | `channelplay.py` | `/channelplay`               | Enable channel mode playback |
-| `language.py`    | `/lang`, `/language`         | Change bot language          |
 
 **Purpose:** Group-specific settings and user management.
+
+---
+
+#### 📁 features/ - Special Features
+
+| File              | Commands                  | Description                     |
+| ----------------- | ------------------------- | ------------------------------- |
+| `adminmention.py` | `/admins`, `/admin`       | Mention all admins in group     |
+| `bots.py`         | `/bots`                   | List all bots in the group      |
+| `groupdata.py`    | `/groupdata`, `/chatinfo` | Display group statistics & info |
+
+**Purpose:** Enhanced group management and information features.
+
+---
+
+#### 📁 misc/ - Miscellaneous Features
+
+| File          | Commands         | Description             |
+| ------------- | ---------------- | ----------------------- |
+| `dicegame.py` | `/dice`, `/dart` | Fun dice and dart games |
+
+**Purpose:** Fun entertainment features.
 
 ---
 
@@ -157,9 +186,12 @@ Utility functions used throughout the bot.
 | `_exec.py`       | Code execution helpers for eval command               |
 | `_inline.py`     | Inline keyboard button builders                       |
 | `_play.py`       | Music playback helper functions                       |
+| `_preload.py`    | Background preloading system for next tracks          |
 | `_queue.py`      | Queue management (add, remove, get next)              |
 | `_thumbnails.py` | Thumbnail generation and processing                   |
 | `_utilities.py`  | General utility functions                             |
+| `Inter-Light.ttf`| Font file for thumbnail text rendering               |
+| `Raleway-Bold.ttf`| Font file for thumbnail text rendering              |
 
 **Purpose:** Reusable helper functions to keep plugin code clean and DRY.
 
@@ -282,7 +314,8 @@ HasiiMusicBot/
 ├── 📚 Documentation
 │   ├── README.md                 # Project overview and setup guide
 │   ├── LICENSE                   # Software license
-│   └── PROJECT_STRUCTURE.md      # This file
+│   ├── PROJECT_STRUCTURE.md      # This file
+│   └── SECURITY.md               # Security guidelines
 │
 └── 📦 HasiiMusic/                # Main application package
     │
@@ -297,15 +330,18 @@ HasiiMusicBot/
     │   ├── telegram.py           # Telegram helpers
     │   ├── youtube.py            # YouTube downloader
     │   ├── lang.py               # Language system
-    │   └── dir.py                # Directory manager
+    │   ├── dir.py                # Directory manager
+    │   └── preload.py            # Track preloader
     │
     ├── 🔌 plugins/               # Command handlers
     │   ├── __init__.py           # Plugin loader
     │   │
     │   ├── admin-controles/      # Owner/sudo commands
+    │   │   ├── autoleave.py      # Auto-leave configuration
     │   │   ├── broadcast.py      # Broadcast messages
     │   │   ├── eval.py           # Code execution
-    │   │   ├── restart.py        # Bot restart
+    │   │   ├── leave.py          # Leave groups
+    │   │   ├── restart.py        # Bot restart/update
     │   │   └── sudoers.py        # Sudo management
     │   │
     │   ├── events/               # Event handlers
@@ -327,13 +363,24 @@ HasiiMusicBot/
     │   │   ├── skip.py           # Skip command
     │   │   ├── stop.py           # Stop command
     │   │   ├── seek.py           # Seek command
-    │   │   └── queue.py          # Queue display
+    │   │   ├── shuffle.py        # Shuffle queue
+    │   │   ├── loop.py           # Loop mode
+    │   │   ├── queue.py          # Queue display
+    │   │   ├── radio.py          # Radio streams
+    │   │   └── example_radio.py  # Radio presets
     │   │
-    │   └── settings/             # Settings commands
-    │       ├── auth.py           # Authorization
-    │       ├── blacklist.py      # User blocking
-    │       ├── channelplay.py    # Channel mode
-    │       └── language.py       # Language selection
+    │   ├── settings/             # Settings commands
+    │   │   ├── auth.py           # Authorization
+    │   │   ├── blacklist.py      # User blocking
+    │   │   └── channelplay.py    # Channel mode
+    │   │
+    │   ├── features/             # Special features
+    │   │   ├── adminmention.py   # Mention admins
+    │   │   ├── bots.py           # List bots
+    │   │   └── groupdata.py      # Group info
+    │   │
+    │   └── misc/                 # Miscellaneous
+    │       └── dicegame.py       # Fun games
     │
     ├── 🛠️ helpers/               # Helper functions
     │   ├── __init__.py           # Helper exports
@@ -342,9 +389,12 @@ HasiiMusicBot/
     │   ├── _exec.py              # Code execution
     │   ├── _inline.py            # Inline keyboards
     │   ├── _play.py              # Playback helpers
+    │   ├── _preload.py           # Background preloading
     │   ├── _queue.py             # Queue management
     │   ├── _thumbnails.py        # Thumbnail generator
-    │   └── _utilities.py         # General utilities
+    │   ├── _utilities.py         # General utilities
+    │   ├── Inter-Light.ttf       # Font file
+    │   └── Raleway-Bold.ttf      # Font file
     │
     ├── 🌍 locales/               # Translations
     │   ├── README.md             # Translation guide
@@ -497,4 +547,6 @@ When adding new features:
 
 ---
 
-**Last Updated:** November 20, 2025
+---
+
+**Last Updated:** February 6, 2026
