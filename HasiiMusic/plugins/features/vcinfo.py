@@ -1,6 +1,7 @@
 from pyrogram import filters
 from pyrogram.types import Message
 from pyrogram.enums import ParseMode, ChatMemberStatus
+from pyrogram.raw import functions
 
 from HasiiMusic import app, db
 
@@ -28,15 +29,68 @@ async def vc_info_command(client, message: Message):
         )
     
     try:
-        # Get the assistant client for this chat
-        assistant = await db.get_assistant(chat_id)
-        
-        # Get voice chat participants
-        try:
-            participants = await assistant.get_participants(chat_id)
-        except Exception:
+        # Get the assistant client (Pyrogram) for this chat
+        userbot = await db.get_client(chat_id)
+        if not userbot:
             return await message.reply_text(
-                "❌ <b>No active voice chat found!</b>\n<blockquote>There is no ongoing voice chat in this group.</blockquote>",
+                "❌ <b>No assistant found!</b>\n<blockquote>Bot assistant is not available for this chat.</blockquote>",
+                parse_mode=ParseMode.HTML
+            )
+        
+        # Get voice chat participants using raw API with pagination
+        try:
+            # Resolve peer
+            peer = await userbot.resolve_peer(chat_id)
+            
+            # Get full chat to find the group call input
+            full_chat = await userbot.invoke(
+                functions.channels.GetFullChannel(channel=peer)
+            )
+            
+            if not full_chat.full_chat.call:
+                return await message.reply_text(
+                    "❌ <b>No active voice chat found!</b>\n<blockquote>There is no ongoing voice chat in this group.</blockquote>",
+                    parse_mode=ParseMode.HTML
+                )
+            
+            input_group_call = full_chat.full_chat.call
+            
+            participants_raw = []
+            next_offset = ""
+            
+            while True:
+                res = await userbot.invoke(
+                    functions.phone.GetGroupCallParticipants(
+                        call=input_group_call,
+                        ids=[],
+                        sources=[],
+                        offset=next_offset,
+                        limit=200
+                    )
+                )
+                
+                participants_raw.extend(res.participants)
+                next_offset = res.next_offset
+                
+                if not next_offset:
+                    break
+            
+            # Helper class to adapt raw response to existing logic
+            class VCParticipant:
+                def __init__(self, raw_p):
+                    self.user_id = raw_p.peer.user_id
+                    self.muted = raw_p.muted
+                    self.volume = raw_p.volume if hasattr(raw_p, "volume") and raw_p.volume is not None else 10000
+                    # Check for video/presentation usage
+                    self.video = getattr(raw_p, "video", False)
+                    self.presentation = getattr(raw_p, "presentation", False)
+                    self.screen_sharing = self.presentation or self.video
+
+            participants = [VCParticipant(p) for p in participants_raw]
+
+        except Exception as e:
+            return await message.reply_text(
+                f"❌ <b>Error fetching VC info.</b>\n<blockquote>{str(e)}</blockquote>",
                 parse_mode=ParseMode.HTML
             )
         
