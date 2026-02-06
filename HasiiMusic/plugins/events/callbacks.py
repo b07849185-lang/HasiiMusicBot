@@ -194,18 +194,27 @@ async def _controls(_, query: types.CallbackQuery):
 
     try:
         if action in ["skip", "replay", "stop"]:
+            sent_msg = None
             try:
-                await query.message.reply_text(reply, quote=False)
+                sent_msg = await query.message.reply_text(reply, quote=False)
             except FloodWait as e:
                 # If FloodWait occurs, wait and retry once
                 await asyncio.sleep(e.value)
                 try:
-                    await query.message.reply_text(reply, quote=False)
+                    sent_msg = await query.message.reply_text(reply, quote=False)
                 except Exception:
                     pass
             except Exception:
                 pass
             await query.message.delete()
+            
+            # Auto-delete the reply message after 5 seconds
+            if sent_msg:
+                await asyncio.sleep(5)
+                try:
+                    await sent_msg.delete()
+                except Exception:
+                    pass
         else:
             mtext = re.sub(
                 r"\n\n<blockquote>.*?</blockquote>",
@@ -280,12 +289,18 @@ async def handle_seek(query: types.CallbackQuery, chat_id: int, action: str, use
         # Use callback answer to avoid FloodWait
         await query.answer(f"✅ ꜱᴇᴇᴋᴇᴅ ᴛᴏ {time_str}", show_alert=True)
         
-        # Try to send reply message with FloodWait handling
+        # Try to send reply message with FloodWait handling and auto-delete after 5 seconds
         try:
-            await query.message.reply_text(
+            sent_msg = await query.message.reply_text(
                 f"✅ ꜱᴇᴇᴋᴇᴅ ᴛᴏ {time_str}\n\n<blockquote>ʙʏ {user}</blockquote>",
                 quote=False
             )
+            # Auto-delete after 5 seconds
+            await asyncio.sleep(5)
+            try:
+                await sent_msg.delete()
+            except Exception:
+                pass
         except FloodWait as e:
             # If rate limited, just skip the message since user already got feedback via callback
             pass

@@ -12,6 +12,7 @@
 # - Music must be playing
 # ==============================================================================
 
+import asyncio
 from pyrogram import filters, types
 
 from HasiiMusic import tune, app, db, lang
@@ -28,4 +29,11 @@ async def _stop(_, m: types.Message):
         return await m.reply_text(m.lang["not_playing"])
 
     await tune.stop(m.chat.id)
-    await m.reply_text(m.lang["play_stopped"].format(m.from_user.mention))
+    sent_msg = await m.reply_text(m.lang["play_stopped"].format(m.from_user.mention))
+    
+    # Auto-delete after 5 seconds
+    await asyncio.sleep(5)
+    try:
+        await sent_msg.delete()
+    except Exception:
+        pass
