@@ -17,10 +17,37 @@
 import asyncio
 import time
 
+import pyrogram
 from pyrogram import enums, filters, types
 
 from HasiiMusic import tune, app, config, db, lang, logger, queue, tasks, userbot, yt
 from HasiiMusic.helpers import buttons
+
+
+@app.on_message(filters.incoming & ~filters.service, group=-1)
+async def _maintenance_mode_check(_, m: types.Message):
+    """
+    Global maintenance mode check - runs before all other handlers.
+    Blocks non-sudo users when maintenance mode is enabled.
+    """
+    # Skip check for sudo users
+    if not m.from_user or m.from_user.id in app.sudoers:
+        return
+    
+    # Check if maintenance mode is enabled
+    maintenance = await db.get_maintenance()
+    if maintenance:
+        # Block non-sudo user with maintenance message
+        try:
+            await m.reply_text(
+                "<blockquote><b>🔧 ʙᴏᴛ ᴜɴᴅᴇʀ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ</b>\n\n"
+                "ᴛʜᴇ ʙᴏᴛ ɪꜱ ᴄᴜʀʀᴇɴᴛʟʏ ᴜɴᴅᴇʀɢᴏɪɴɢ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ.\n"
+                "ᴘʟᴇᴀꜱᴇ ᴛʀʏ ᴀɢᴀɪɴ ʟᴀᴛᴇʀ.</blockquote>"
+            )
+        except Exception:
+            pass
+        # Stop propagation - don't process any further handlers
+        raise pyrogram.StopPropagation
 
 
 @app.on_message(filters.video_chat_started, group=19)
