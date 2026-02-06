@@ -24,11 +24,12 @@ from HasiiMusic import tune, app, config, db, lang, logger, queue, tasks, userbo
 from HasiiMusic.helpers import buttons
 
 
-@app.on_message(filters.incoming & ~filters.service, group=-1)
+@app.on_message(filters.regex(r"^/") & ~filters.service, group=-1)
 async def _maintenance_mode_check(_, m: types.Message):
     """
     Global maintenance mode check - runs before all other handlers.
     Blocks non-sudo users when maintenance mode is enabled.
+    Only triggers for bot commands (starting with /)
     """
     # Skip check for sudo users
     if not m.from_user or m.from_user.id in app.sudoers:

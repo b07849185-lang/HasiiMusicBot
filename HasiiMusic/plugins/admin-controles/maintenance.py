@@ -24,11 +24,11 @@ async def _maintenance(_, m: types.Message):
     # If no argument, show current status
     if len(m.command) < 2:
         status = await db.get_maintenance()
-        status_text = "🔴 **ENABLED**" if status else "🟢 **DISABLED**"
+        status_text = "🔴 ᴇɴᴀʙʟᴇᴅ" if status else "🟢 ᴅɪꜱᴀʙʟᴇᴅ"
         
         await m.reply_text(
             f"<blockquote><u><b>🔧 ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ ᴍᴏᴅᴇ ꜱᴛᴀᴛᴜꜱ</b></u>\n\n"
-            f"<b>ᴄᴜʀʀᴇɴᴛ ᴀᴛᴜꜱ:</b> {status_text}\n\n"
+            f"<b>ᴄᴜʀʀᴇɴᴛ ꜱᴛᴀᴛᴜꜱ:</b> {status_text}\n\n"
             f"<b>ᴜꜱᴀɢᴇ:</b>\n"
             f"<code>/maintenance enable</code> - Enable mode\n"
             f"<code>/maintenance disable</code> - Disable mode</blockquote>"
