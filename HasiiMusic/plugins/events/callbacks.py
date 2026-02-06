@@ -349,17 +349,6 @@ async def _help(_, query: types.CallbackQuery):
     
     category = query.data.replace("help_", "")
     
-    if category == "close":
-        try:
-            await query.message.delete()
-        except Exception:
-            pass
-        try:
-            await query.message.reply_to_message.delete()
-        except Exception:
-            pass
-        return
-    
     if category == "back":
         # Return to main help menu
         try:
