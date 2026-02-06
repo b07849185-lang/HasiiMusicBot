@@ -323,13 +323,33 @@ async def handle_shuffle(query: types.CallbackQuery, chat_id: int, user: str):
     )
 
 
-@app.on_callback_query(filters.regex(r"^help_") & ~app.bl_users)
+@app.on_callback_query(filters.regex(r"^help") & ~app.bl_users)
 @lang.language()
 async def _help(_, query: types.CallbackQuery):
+    await query.answer()
+    
+    # Handle plain "help" callback - show main menu
+    if query.data == "help":
+        try:
+            # Try to edit as photo message first
+            await query.edit_message_caption(
+                caption=query.lang["help_menu"], 
+                reply_markup=buttons.help_markup(query.lang)
+            )
+        except Exception:
+            # Fallback to text edit if not a photo message
+            try:
+                await query.edit_message_text(
+                    text=query.lang["help_menu"], 
+                    reply_markup=buttons.help_markup(query.lang)
+                )
+            except Exception:
+                pass
+        return
+    
     category = query.data.replace("help_", "")
     
     if category == "close":
-        await query.answer()
         try:
             await query.message.delete()
         except Exception:
@@ -342,10 +362,20 @@ async def _help(_, query: types.CallbackQuery):
     
     if category == "back":
         # Return to main help menu
-        return await query.edit_message_caption(
-            caption=query.lang["help_menu"], 
-            reply_markup=buttons.help_markup(query.lang)
-        )
+        try:
+            await query.edit_message_caption(
+                caption=query.lang["help_menu"], 
+                reply_markup=buttons.help_markup(query.lang)
+            )
+        except Exception:
+            try:
+                await query.edit_message_text(
+                    text=query.lang["help_menu"], 
+                    reply_markup=buttons.help_markup(query.lang)
+                )
+            except Exception:
+                pass
+        return
 
     # Handle all help categories
     help_texts = {
@@ -371,10 +401,19 @@ async def _help(_, query: types.CallbackQuery):
     
     help_text = help_texts.get(category, query.lang["help_admins"])
     
-    await query.edit_message_caption(
-        caption=help_text,
-        reply_markup=buttons.help_markup(query.lang, True),
-    )
+    try:
+        await query.edit_message_caption(
+            caption=help_text,
+            reply_markup=buttons.help_markup(query.lang, True),
+        )
+    except Exception:
+        try:
+            await query.edit_message_text(
+                text=help_text,
+                reply_markup=buttons.help_markup(query.lang, True),
+            )
+        except Exception:
+            pass
 
 
 @app.on_callback_query(filters.regex("playmode") & ~app.bl_users)
