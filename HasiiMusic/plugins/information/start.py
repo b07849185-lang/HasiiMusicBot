@@ -17,12 +17,21 @@ from HasiiMusic.helpers import buttons, utils
 @app.on_message(filters.command(["help"]) & filters.private & ~app.bl_users)
 @lang.language()
 async def _help(_, m: types.Message):
-    """Handle /help command in private chats - shows help menu."""
-    await m.reply_text(
-        text=m.lang["help_menu"],
-        reply_markup=buttons.help_markup(m.lang),
-        quote=True,
-    )
+    """Handle /help command in private chats - shows help menu with image."""
+    try:
+        await m.reply_photo(
+            photo=config.START_IMG,  # Use same image as start command
+            caption=m.lang["help_menu"],
+            reply_markup=buttons.help_markup(m.lang),
+            quote=True,
+        )
+    except Exception:
+        # Fallback to text if photo fails
+        await m.reply_text(
+            text=m.lang["help_menu"],
+            reply_markup=buttons.help_markup(m.lang),
+            quote=True,
+        )
 
 
 @app.on_message(filters.command(["start"]))

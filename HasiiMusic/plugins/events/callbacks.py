@@ -323,19 +323,12 @@ async def handle_shuffle(query: types.CallbackQuery, chat_id: int, user: str):
     )
 
 
-@app.on_callback_query(filters.regex(r"^help($| )") & ~app.bl_users)
+@app.on_callback_query(filters.regex(r"^help_") & ~app.bl_users)
 @lang.language()
 async def _help(_, query: types.CallbackQuery):
-    data = query.data.split()
-    if len(data) == 1:
-        return await query.answer(url=f"https://t.me/{app.username}?start=help")
-
-    if data[1] == "back":
-        return await query.edit_message_text(
-            text=query.lang["help_menu"], reply_markup=buttons.help_markup(
-                query.lang)
-        )
-    elif data[1] == "close":
+    category = query.data.replace("help_", "")
+    
+    if category == "close":
         await query.answer()
         try:
             await query.message.delete()
@@ -346,9 +339,40 @@ async def _help(_, query: types.CallbackQuery):
         except Exception:
             pass
         return
+    
+    if category == "back":
+        # Return to main help menu
+        return await query.edit_message_caption(
+            caption=query.lang["help_menu"], 
+            reply_markup=buttons.help_markup(query.lang)
+        )
 
-    await query.edit_message_text(
-        text=query.lang[f"help_{data[1]}"],
+    # Handle all help categories
+    help_texts = {
+        "admins": query.lang["help_admins"],
+        "auth": query.lang["help_auth"],
+        "broadcast": query.lang["help_sudo"],  # Broadcast is sudo feature
+        "blchat": query.lang["help_blchat"],
+        "bluser": query.lang["help_bluser"],
+        "gban": query.lang["help_gban"],
+        "loop": query.lang["help_loop"],
+        "play": query.lang["help_play"],
+        "queue": query.lang["help_queue"],
+        "seek": query.lang["help_seek"],
+        "shuffle": query.lang["help_shuffle"],
+        "song": query.lang["help_song"],
+        "ping": query.lang["help_ping"],
+        "speed": query.lang["help_speed"],
+        "games": query.lang["help_games"],
+        "stats": query.lang["help_stats"],
+        "sudo": query.lang["help_sudo"],
+        "maintenance": query.lang["help_maintenance"],
+    }
+    
+    help_text = help_texts.get(category, query.lang["help_admins"])
+    
+    await query.edit_message_caption(
+        caption=help_text,
         reply_markup=buttons.help_markup(query.lang, True),
     )
 
