@@ -53,7 +53,6 @@ Contains the fundamental building blocks of the bot.
 | `mongo.py`    | MongoDB database operations (users, chats, blacklist, etc.) |
 | `telegram.py` | Telegram API helper functions                               |
 | `youtube.py`  | YouTube video/audio downloading and processing              |
-| `lang.py`     | Multi-language support system                               |
 | `dir.py`      | Directory management (temp files, downloads, etc.)          |
 | `preload.py`  | Background track preloading for seamless playback           |
 
@@ -63,7 +62,6 @@ Contains the fundamental building blocks of the bot.
 - Manages voice call connections
 - Handles database operations (MongoDB)
 - Downloads and processes media from YouTube
-- Provides language localization
 
 ---
 
@@ -203,15 +201,14 @@ Utility functions used throughout the bot.
 
 ---
 
-### 🌍 HasiiMusic/locales/ - Translations
+### 🌍 HasiiMusic/locales/ - Message Strings
 
-Multi-language support files.
+Bot message strings in JSON format.
 
-| File        | Language          |
+| File        | Description       |
 | ----------- | ----------------- |
-| `en.json`   | English (default) |
-| `si.json`   | Sinhala           |
-| `README.md` | Translation guide |
+| `en.json`   | English messages  |
+| `README.md` | Format guide      |
 
 **Format:** JSON key-value pairs
 
@@ -222,7 +219,7 @@ Multi-language support files.
 }
 ```
 
-**Purpose:** Provides translations for bot messages in multiple languages.
+**Purpose:** Centralized message strings for easy maintenance.
 
 ---
 

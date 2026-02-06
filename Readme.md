@@ -20,7 +20,6 @@
 - 📝 **Queue System** - Manage multiple songs in queue
 - ⚡ **Fast & Reliable** - Built with Pyrogram and PyTgCalls
 - 🎛 **Admin Controls** - Pause, resume, skip, and stop controls
-- 🌐 **Multi-Language** - Supports English and Sinhala
 - 👥 **User Authorization** - Authorized users can control playback
 - 📊 **Statistics** - Track bot usage and performance
 - 🔄 **Auto-Leave** - Automatically leaves inactive voice chats
@@ -97,7 +96,6 @@ bash start
 - `/queue` - View current queue
 - `/ping` - Check bot status
 - `/help` - Show help menu
-- `/lang` - Change language
 
 ### Admin Commands
 
