@@ -19,7 +19,7 @@ from functools import wraps
 from pyrogram import filters, types
 from pyrogram.errors import FloodWait
 
-from HasiiMusic import tune, app, db, lang, logger, queue, tg, yt
+from HasiiMusic import tune, app, config, db, lang, logger, queue, tg, yt
 from HasiiMusic.helpers import admin_check, buttons, can_manage_vc
 
 
@@ -36,6 +36,31 @@ def safe_callback(func):
             except Exception:
                 pass
     return wrapper
+
+
+@app.on_callback_query(filters.regex("^start$") & ~app.bl_users)
+@lang.language()
+@safe_callback
+async def _start_callback(_, query: types.CallbackQuery):
+    """Handle start button callback - return to start message."""
+    await query.answer()
+    
+    _text = query.lang["start_pm"].format(query.from_user.first_name, app.name)
+    key = buttons.start_key(query.lang, True)
+    
+    try:
+        await query.edit_message_caption(
+            caption=_text,
+            reply_markup=key,
+        )
+    except Exception:
+        try:
+            await query.edit_message_text(
+                text=_text,
+                reply_markup=key,
+            )
+        except Exception:
+            pass
 
 
 @app.on_callback_query(filters.regex("cancel_dl") & ~app.bl_users)
@@ -348,14 +373,6 @@ async def _help(_, query: types.CallbackQuery):
         return
     
     category = query.data.replace("help_", "")
-    
-    if category == "close":
-        # Delete the help message
-        try:
-            await query.message.delete()
-        except Exception:
-            pass
-        return
     
     if category == "main":
         # Return to main help menu from category
