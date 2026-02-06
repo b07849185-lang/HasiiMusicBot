@@ -47,24 +47,30 @@ async def _sudo(_, m: types.Message):
 o_mention = None
 
 
-@app.on_message(filters.command(["listsudo", "sudolist"]))
+@app.on_message(filters.command(["listsudo", "sudolist"]) & app.sudo_filter)
 @lang.language()
 async def _listsudo(_, m: types.Message):
-    global o_mention
     sent = await m.reply_text(m.lang["sudo_fetching"])
 
-    if not o_mention:
-        o_mention = (await app.get_users(app.owner)).mention
+    # Always fetch fresh owner info with ID
+    owner_user = await app.get_users(app.owner)
+    o_mention = f"{owner_user.mention} ({app.owner})"
+    
     txt = m.lang["sudo_owner"].format(o_mention)
     sudoers = await db.get_sudoers()
+    
     if sudoers:
-        txt += m.lang["sudo_users"]
-
-    for user_id in sudoers:
-        try:
-            user = (await app.get_users(user_id)).mention
-            txt += f"\n- {user}"
-        except:
-            continue
+        sudo_list = ""
+        for user_id in sudoers:
+            try:
+                user = await app.get_users(user_id)
+                sudo_list += f"\n- {user.mention} ({user_id})"
+            except:
+                # Deleted account or inaccessible user
+                sudo_list += f"\n- Deleted Account ({user_id})"
+                continue
+        
+        if sudo_list:
+            txt += f"<blockquote><u><b>ꜱᴜᴅᴏ ᴜꜱᴇʀꜱ:</b></u>{sudo_list}\n\n</blockquote>"
 
     await sent.edit_text(txt)
