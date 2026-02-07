@@ -16,18 +16,8 @@
 import re
 from pyrogram import filters, types, enums
 
-from HasiiMusic import app
+from HasiiMusic import app, config
 
-
-# =============================================================================
-# CONFIGURATION: Add usernames here to exclude from admin mentions (without @)
-# =============================================================================
-EXCLUDED_USERNAMES = [
-    "Hasindu_Lakshan",
-    "Itz_Me_Rana_o_O",
-    "zqxiro",
-    "Dark_Ryker"
-]
 
 # Pattern to detect admin triggers
 TRIGGER_PATTERN = re.compile(r"(?i)(\.|@|\/)admin")
@@ -84,7 +74,7 @@ async def mention_admins(_, message: types.Message):
                         continue
 
                 # Skip usernames in the excluded list
-                if user.username and user.username.lower() in [u.lower() for u in EXCLUDED_USERNAMES]:
+                if user.username and user.username.lower() in [u.lower() for u in config.EXCLUDED_USERNAMES]:
                     continue
 
                 # Add mention

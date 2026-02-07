@@ -111,6 +111,10 @@ class Config:
         self.RADIO_IMG: str = getenv(
             "RADIO_IMG", "https://files.catbox.moe/t03fzk.png")    # Radio command image
 
+        # ============ MODERATION ============
+        # List of usernames to exclude from admin mentions
+        self.EXCLUDED_USERNAMES: List[str] = getenv("EXCLUDED_USERNAMES", "").split()
+
     def _parse_excluded_chats(self) -> List[int]:
         """
         Parse excluded chat IDs from comma-separated string.
