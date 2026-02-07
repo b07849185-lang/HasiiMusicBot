@@ -483,36 +483,40 @@ async def _send_broadcast(
                 if "-copy" in flags:
                     # Copy mode: send media without forward tag
                     caption = text if text else (media_message.caption or "")
+                    # Get caption entities to preserve formatting (blockquote, bold, italic, etc.)
+                    caption_entities = None if text else (media_message.caption_entities or None)
                     try:
                         if media_message.photo:
                             # Photo is a list of PhotoSize objects, get the largest
                             file_id = media_message.photo.file_id if hasattr(
                                 media_message.photo, 'file_id') else media_message.photo[-1].file_id
-                            sent_message = await app.send_photo(chat_id=chat_id, photo=file_id, caption=caption)
+                            sent_message = await app.send_photo(chat_id=chat_id, photo=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'video', None):
                             file_id = media_message.video.file_id
-                            sent_message = await app.send_video(chat_id=chat_id, video=file_id, caption=caption)
+                            sent_message = await app.send_video(chat_id=chat_id, video=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'audio', None):
                             file_id = media_message.audio.file_id
-                            sent_message = await app.send_audio(chat_id=chat_id, audio=file_id, caption=caption)
+                            sent_message = await app.send_audio(chat_id=chat_id, audio=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'voice', None):
                             file_id = media_message.voice.file_id
-                            sent_message = await app.send_voice(chat_id=chat_id, voice=file_id, caption=caption)
+                            sent_message = await app.send_voice(chat_id=chat_id, voice=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'document', None):
                             file_id = media_message.document.file_id
-                            sent_message = await app.send_document(chat_id=chat_id, document=file_id, caption=caption)
+                            sent_message = await app.send_document(chat_id=chat_id, document=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'animation', None):
                             file_id = media_message.animation.file_id
-                            sent_message = await app.send_animation(chat_id=chat_id, animation=file_id, caption=caption)
+                            sent_message = await app.send_animation(chat_id=chat_id, animation=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'sticker', None):
                             file_id = media_message.sticker.file_id
                             sent_message = await app.send_sticker(chat_id=chat_id, sticker=file_id)
                         else:
-                            # Text-only message: copy the text
+                            # Text-only message: copy the text with formatting
                             message_text = text if text else (
                                 media_message.text or media_message.caption or "")
+                            # Get text entities to preserve formatting (blockquote, bold, italic, etc.)
+                            message_entities = None if text else (media_message.entities or media_message.caption_entities or None)
                             if message_text:
-                                sent_message = await app.send_message(chat_id, message_text)
+                                sent_message = await app.send_message(chat_id, message_text, entities=message_entities)
                             else:
                                 failed_log += f"{chat_id} - Empty message\n"
                                 await asyncio.sleep(0.3)
@@ -636,31 +640,35 @@ async def _send_broadcast(
                     if "-copy" in flags:
                         caption = text if text else (
                             media_message.caption or "")
+                        # Get caption entities for retry to preserve formatting
+                        caption_entities = None if text else (media_message.caption_entities or None)
                         if media_message.photo:
                             # Photo is a list of PhotoSize objects, get the largest
                             file_id = media_message.photo.file_id if hasattr(
                                 media_message.photo, 'file_id') else media_message.photo[-1].file_id
-                            retry_sent = await app.send_photo(chat_id=chat_id, photo=file_id, caption=caption)
+                            retry_sent = await app.send_photo(chat_id=chat_id, photo=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'video', None):
                             file_id = media_message.video.file_id
-                            retry_sent = await app.send_video(chat_id=chat_id, video=file_id, caption=caption)
+                            retry_sent = await app.send_video(chat_id=chat_id, video=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'audio', None):
                             file_id = media_message.audio.file_id
-                            retry_sent = await app.send_audio(chat_id=chat_id, audio=file_id, caption=caption)
+                            retry_sent = await app.send_audio(chat_id=chat_id, audio=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'voice', None):
                             file_id = media_message.voice.file_id
-                            retry_sent = await app.send_voice(chat_id=chat_id, voice=file_id, caption=caption)
+                            retry_sent = await app.send_voice(chat_id=chat_id, voice=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'document', None):
                             file_id = media_message.document.file_id
-                            retry_sent = await app.send_document(chat_id=chat_id, document=file_id, caption=caption)
+                            retry_sent = await app.send_document(chat_id=chat_id, document=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'animation', None):
                             file_id = media_message.animation.file_id
-                            retry_sent = await app.send_animation(chat_id=chat_id, animation=file_id, caption=caption)
+                            retry_sent = await app.send_animation(chat_id=chat_id, animation=file_id, caption=caption, caption_entities=caption_entities)
                         elif getattr(media_message, 'sticker', None):
                             file_id = media_message.sticker.file_id
                             retry_sent = await app.send_sticker(chat_id=chat_id, sticker=file_id)
                         else:
-                            retry_sent = await app.send_message(chat_id, text)
+                            # Text message retry: get entities to preserve formatting
+                            message_entities = None if text else (media_message.entities or media_message.caption_entities or None)
+                            retry_sent = await app.send_message(chat_id, text, entities=message_entities)
                     else:
                         # Forward mode for retry
                         retry_sent = await media_message.forward(chat_id)
