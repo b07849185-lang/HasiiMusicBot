@@ -108,6 +108,54 @@ async def play_hndlr(
                 "❌ **ꜰᴀɪʟᴇᴅ ᴛᴏ ɢᴇᴛ ᴄʜᴀɴɴᴇʟ.**\n\n"
                 "ᴍᴀᴋᴇ ꜱᴜʀᴇ ɪ'ᴍ ᴀᴅᴍɪɴ ɪɴ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ ᴀɴᴅ ᴄʜᴀɴɴᴇʟ ᴘʟᴀʏ ɪꜱ ꜱᴇᴛ ᴄᴏʀʀᴇᴄᴛʟʏ."
             )
+        
+        # Auto-join assistant to channel if not already a member
+        client = await db.get_client(channel_id)
+        try:
+            # Check if assistant is in the channel
+            await app.get_chat_member(channel_id, client.id)
+        except Exception:
+            # Assistant not in channel, try to join
+            try:
+                # For channels, we need an invite link
+                if chat.username:
+                    invite_link = chat.username
+                else:
+                    # Try to get/create invite link
+                    try:
+                        invite_link = chat.invite_link
+                        if not invite_link:
+                            invite_link = await app.export_chat_invite_link(channel_id)
+                    except Exception:
+                        return await m.reply_text(
+                            f"❌ **ᴀꜱꜱɪꜱᴛᴀɴᴛ ɴᴏᴛ ɪɴ ᴄʜᴀɴɴᴇʟ!**\n\n"
+                            f"<blockquote>ᴘʟᴇᴀꜱᴇ ᴀᴅᴅ @{client.username if client.username else client.mention} "
+                            f"ᴛᴏ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ ᴀꜱ ᴀᴅᴍɪɴ ᴡɪᴛʜ ᴠᴏɪᴄᴇ ᴄʜᴀᴛ ᴘᴇʀᴍɪꜱꜱɪᴏɴꜱ.</blockquote>"
+                        )
+                
+                # Show joining message
+                join_msg = await m.reply_text(
+                    f"🔄 **ᴊᴏɪɴɪɴɢ ᴀꜱꜱɪꜱᴛᴀɴᴛ ᴛᴏ ᴄʜᴀɴɴᴇʟ...**"
+                )
+                
+                # Try to join the channel
+                await client.join_chat(invite_link)
+                await asyncio.sleep(1)  # Give it time to fully join
+                
+                # Delete joining message
+                try:
+                    await join_msg.delete()
+                except:
+                    pass
+                    
+            except Exception as e:
+                error_str = str(e)
+                return await m.reply_text(
+                    f"❌ **ꜰᴀɪʟᴇᴅ ᴛᴏ ᴊᴏɪɴ ᴀꜱꜱɪꜱᴛᴀɴᴛ ᴛᴏ ᴄʜᴀɴɴᴇʟ!**\n\n"
+                    f"<blockquote>ᴘʟᴇᴀꜱᴇ ᴍᴀɴᴜᴀʟʟʏ ᴀᴅᴅ @{client.username if client.username else client.mention} "
+                    f"ᴛᴏ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ ᴀꜱ ᴀᴅᴍɪɴ ᴡɪᴛʜ ᴠᴏɪᴄᴇ ᴄʜᴀᴛ ᴘᴇʀᴍɪꜱꜱɪᴏɴꜱ.\n\n"
+                    f"**Error:** {error_str}</blockquote>"
+                )
 
     # Select emoji for this play session
     play_emoji = m.lang["play_emoji"]
