@@ -130,7 +130,7 @@ async def stop_broadcast(_, message: types.Message) -> None:
         await message.delete()
     except Exception:
         pass
-    """
+    
     global broadcasting
 
     if not broadcasting:
