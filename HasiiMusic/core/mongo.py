@@ -377,6 +377,21 @@ class MongoDB:
                 {"$set": {"channel_id": channel_id}},
                 upsert=True,
             )
+    
+    async def get_group_for_channel(self, channel_id: int) -> int | None:
+        """Reverse lookup: Find which group has this channel set for channel play.
+        
+        When audio streams to a channel, we need to know which group initiated it
+        so we can send control messages to the group instead of the channel.
+        """
+        doc = await self.cache.find_one({"channel_id": channel_id})
+        if doc and doc.get("_id", "").startswith("cplay_"):
+            group_id_str = doc["_id"].replace("cplay_", "")
+            try:
+                return int(group_id_str)
+            except ValueError:
+                return None
+        return None
 
     # AUTO LEAVE METHODS
     async def get_autoleave(self, chat_id: int) -> bool:

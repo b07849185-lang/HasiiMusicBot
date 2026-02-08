@@ -299,7 +299,13 @@ async def play_hndlr(
             )
 
     try:
-        await tune.play_media(chat_id=chat_id, message=sent, media=file, thumbnail_chat_id=message_chat_id)
+        # Pass message_chat_id only if it's different from chat_id (channel play mode)
+        await tune.play_media(
+            chat_id=chat_id, 
+            message=sent, 
+            media=file, 
+            message_chat_id=message_chat_id if chat_id != message_chat_id else None
+        )
         # React with emoji on successful play
         try:
             emoji = m.lang["play_emoji"]

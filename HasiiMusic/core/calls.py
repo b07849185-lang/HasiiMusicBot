@@ -132,13 +132,26 @@ class TgCall(PyTgCalls):
         message: Message | None,
         media: Media | Track,
         seek_time: int = 0,
-        thumbnail_chat_id: int = None,
+        message_chat_id: int = None,
     ) -> None:
+        """Play media in voice chat.
+        
+        Args:
+            chat_id: Where to stream audio (could be channel in channel play mode)
+            message: Message to edit/delete (if any)
+            media: Media object to play
+            seek_time: Position to seek to (seconds)
+            message_chat_id: Where to send control messages (group chat in channel play mode)
+                           If None, messages go to same chat as audio (chat_id)
+        """
         client = await db.get_assistant(chat_id)
         _lang = await lang.get_lang(chat_id)
-        # If thumbnail_chat_id is provided (cplay mode), use it for sending thumbnail
-        # Otherwise use chat_id (normal mode)
-        thumb_target_chat = thumbnail_chat_id if thumbnail_chat_id else chat_id
+        
+        # Determine where messages should go:
+        # - If message_chat_id provided (channel play): send to group
+        # - Otherwise: send to same chat as audio
+        target_chat_for_messages = message_chat_id if message_chat_id else chat_id
+        
         # Generate thumbnail only if THUMB_GEN is enabled, otherwise use default
         if config.THUMB_GEN and isinstance(media, Track):
             _thumb = await thumb.generate(media)
@@ -333,9 +346,9 @@ class TgCall(PyTgCalls):
                     except Exception:
                         pass
                 
-                # Send new photo message to the appropriate chat (group for cplay, channel for normal)
+                # Send new photo message to target chat (group in channel play mode, or same chat otherwise)
                 sent_photo = await self._send_photo_with_retry(
-                    chat_id=thumb_target_chat,
+                    chat_id=target_chat_for_messages,
                     photo=_thumb,
                     caption=text,
                     reply_markup=keyboard,
@@ -469,35 +482,36 @@ class TgCall(PyTgCalls):
             _lang = await lang.get_lang(chat_id)
             
             # Detect channel play mode for proper message routing
+            message_chat_id = None  # Default: messages to same chat
             try:
                 chat = await app.get_chat(chat_id)
-                message_chat_id = chat_id
-                thumbnail_target_chat = None
-                
                 if chat.type == enums.ChatType.CHANNEL:
-                    # Channel play - messages go to channel for now
-                    message_chat_id = chat_id
-                    thumbnail_target_chat = None
+                    # Channel play detected - find the group that initiated it
+                    group_id = await db.get_group_for_channel(chat_id)
+                    if group_id:
+                        message_chat_id = group_id
             except Exception:
-                message_chat_id = chat_id
-                thumbnail_target_chat = None
+                pass
             
             # Update media time
             media.time = seconds
             
+            # Determine target chat for messages
+            target_chat = message_chat_id if message_chat_id else chat_id
+            
             # Get message to update
             try:
-                msg = await app.get_messages(message_chat_id, media.message_id)
+                msg = await app.get_messages(target_chat, media.message_id)
             except Exception:
                 # Message deleted or doesn't exist, create new one
                 msg = None
             
             if not msg:
                 _lang = await lang.get_lang(chat_id)
-                msg = await app.send_message(chat_id=message_chat_id, text=_lang["seeking"])
+                msg = await app.send_message(chat_id=target_chat, text=_lang["seeking"])
             
             # Replay from new position
-            await self.play_media(chat_id, msg, media, seek_time=seconds, thumbnail_chat_id=thumbnail_target_chat)
+            await self.play_media(chat_id, msg, media, seek_time=seconds, message_chat_id=message_chat_id)
             return True
         except Exception as e:
             logger.warning(f"Seek stream failed for {chat_id}: {e}")
@@ -520,22 +534,20 @@ class TgCall(PyTgCalls):
                 if not await db.get_call(chat_id):
                     return
 
-                # IMPORTANT: Detect channel play mode and get the group chat for messages
-                # Check if chat_id is a channel, if so, find the linked group
+                # Detect channel play mode for proper message routing
+                message_chat_id = None  # Default: messages to same chat
                 try:
                     chat = await app.get_chat(chat_id)
-                    message_chat_id = chat_id  # Default: send messages to same chat as playback
-                    thumbnail_target_chat = None  # Default: no separate thumbnail chat
-                    
                     if chat.type == enums.ChatType.CHANNEL:
-                        # This is channel play - we need to send messages to the group instead
-                        # For now, messages in channel play will go to channel (audio only)
-                        # TODO: Store group<->channel mapping in database for proper message routing
-                        message_chat_id = chat_id  # Keep messages in channel for now
-                        thumbnail_target_chat = None  # Will use default
+                        # Channel play detected - find the group that initiated it
+                        group_id = await db.get_group_for_channel(chat_id)
+                        if group_id:
+                            message_chat_id = group_id
                 except Exception:
-                    message_chat_id = chat_id
-                    thumbnail_target_chat = None
+                    pass
+                
+                # Determine target chat for messages
+                target_chat = message_chat_id if message_chat_id else chat_id
 
                 # Check loop mode
                 loop_mode = await db.get_loop(chat_id)
@@ -546,8 +558,8 @@ class TgCall(PyTgCalls):
                     if media:
                         _lang = await lang.get_lang(chat_id)
                         try:
-                            msg = await app.send_message(chat_id=message_chat_id, text=_lang["play_again"])
-                            await self.play_media(chat_id, msg, media, thumbnail_chat_id=thumbnail_target_chat)
+                            msg = await app.send_message(chat_id=target_chat, text=_lang["play_again"])
+                            await self.play_media(chat_id, msg, media, message_chat_id=message_chat_id)
                         except errors.ChannelPrivate:
                             logger.warning(f"Bot removed from {chat_id}, cleaning up")
                             try:
@@ -567,12 +579,12 @@ class TgCall(PyTgCalls):
                         first_track = all_items[0]
                         _lang = await lang.get_lang(chat_id)
                         try:
-                            msg = await app.send_message(chat_id=message_chat_id, text="🔁 Looping queue...")
+                            msg = await app.send_message(chat_id=target_chat, text="🔁 Looping queue...")
                             if not first_track.file_path:
                                 is_live = getattr(first_track, 'is_live', False)
                                 first_track.file_path = await yt.download(first_track.id, is_live=is_live)
                             first_track.message_id = msg.id
-                            await self.play_media(chat_id, msg, first_track, thumbnail_chat_id=thumbnail_target_chat)
+                            await self.play_media(chat_id, msg, first_track, message_chat_id=message_chat_id)
                         except errors.ChannelPrivate:
                             logger.warning(f"Bot removed from {chat_id}, cleaning up")
                             await self.leave_call(chat_id)
@@ -607,12 +619,12 @@ class TgCall(PyTgCalls):
                 _lang = await lang.get_lang(chat_id)
                 # Send message with FloodWait handling
                 try:
-                    msg = await app.send_message(chat_id=message_chat_id, text=_lang["play_next"])
+                    msg = await app.send_message(chat_id=target_chat, text=_lang["play_next"])
                 except errors.FloodWait as fw:
                     logger.warning(f"FloodWait in play_next for {chat_id}: waiting {fw.value}s")
                     await asyncio.sleep(fw.value + 1)
                     try:
-                        msg = await app.send_message(chat_id=message_chat_id, text=_lang["play_next"])
+                        msg = await app.send_message(chat_id=target_chat, text=_lang["play_next"])
                     except errors.ChannelPrivate:
                         logger.warning(f"Bot removed from {chat_id}, cleaning up")
                         await self.leave_call(chat_id)
@@ -647,12 +659,12 @@ class TgCall(PyTgCalls):
 
                 media.message_id = msg.id if msg else 0
                 if msg:
-                    await self.play_media(chat_id, msg, media, thumbnail_chat_id=thumbnail_target_chat)
+                    await self.play_media(chat_id, msg, media, message_chat_id=message_chat_id)
                 else:
                     # No message object due to errors, but continue playback
                     # Create a temporary message or handle without UI update
                     logger.info(f"Playing next track for {chat_id} without message update")
-                    await self.play_media(chat_id, None, media)
+                    await self.play_media(chat_id, None, media, message_chat_id=message_chat_id)
                 
                 # ✨ NEW: After playing next track, start preloading upcoming tracks
                 try:
