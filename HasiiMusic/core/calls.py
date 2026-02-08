@@ -23,12 +23,18 @@ from pytgcalls.pytgcalls_session import PyTgCallsSession
 from HasiiMusic import app, config, db, lang, logger, preload, queue, userbot, yt
 from HasiiMusic.helpers import Media, Track, buttons, thumb
 
-# Suppress pytgcalls UpdateGroupCall errors (library bug - harmless)
-class UpdateGroupCallFilter(logging.Filter):
+# Suppress pytgcalls harmless errors (library bugs - not critical)
+class PyTgCallsErrorFilter(logging.Filter):
     def filter(self, record):
-        return 'UpdateGroupCall' not in record.getMessage()
+        # Filter out UpdateGroupCall errors
+        if 'UpdateGroupCall' in record.getMessage():
+            return False
+        # Filter out ConnectionNotFound errors (happens when call ends but updates still arrive)
+        if 'Connection with chat id' in record.getMessage() and 'not found' in record.getMessage():
+            return False
+        return True
 
-logging.getLogger('pyrogram.dispatcher').addFilter(UpdateGroupCallFilter())
+logging.getLogger('pyrogram.dispatcher').addFilter(PyTgCallsErrorFilter())
 
 
 class TgCall(PyTgCalls):
