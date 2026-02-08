@@ -448,23 +448,22 @@ class TgCall(PyTgCalls):
                 return
 
             # Detect channel play mode for proper message routing
+            message_chat_id = None  # Default: messages to same chat
             try:
                 chat = await app.get_chat(chat_id)
-                message_chat_id = chat_id
-                thumbnail_target_chat = None
-                
                 if chat.type == enums.ChatType.CHANNEL:
-                    # Channel play - messages go to channel for now
-                    message_chat_id = chat_id
-                    thumbnail_target_chat = None
+                    # Channel play detected - find the group that initiated it
+                    group_id = await db.get_group_for_channel(chat_id)
+                    if group_id:
+                        message_chat_id = group_id
             except Exception:
-                message_chat_id = chat_id
-                thumbnail_target_chat = None
+                pass
 
             media = queue.get_current(chat_id)
             _lang = await lang.get_lang(chat_id)
-            msg = await app.send_message(chat_id=message_chat_id, text=_lang["play_again"])
-            await self.play_media(chat_id, msg, media, thumbnail_chat_id=thumbnail_target_chat)
+            target_chat = message_chat_id if message_chat_id else chat_id
+            msg = await app.send_message(chat_id=target_chat, text=_lang["play_again"])
+            await self.play_media(chat_id, msg, media, message_chat_id=message_chat_id)
         except Exception as e:
             logger.error(f"Error in replay for {chat_id}: {e}", exc_info=True)
 
