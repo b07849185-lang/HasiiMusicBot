@@ -1,11 +1,10 @@
 app = "hasiimusicbot"
-primary_region = "iad"
+primary_region = "ams"
 
-[build]
-  dockerfile = "Dockerfile"
+[processes]
+  app = "bash start"
 
-# 🔥 مواصفات الخادم (TITANIUM SPECS) 🔥
 [[vm]]
-  cpu_kind = "performance"  # لازم performance عشان يقبل 16 كور
-  cpus = 16                 # 16 Cores
-  memory_mb = 92160         # 90 GB RAM (90 * 1024)
+  cpu_kind = "performance"
+  cpus = 16
+  memory_mb = 102400
