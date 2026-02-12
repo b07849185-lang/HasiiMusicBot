@@ -1,0 +1,11 @@
+app = "hasiimusicbot"
+primary_region = "ams"
+
+[build]
+  builder = "paketobuildpacks/builder:base"
+
+# تم إلغاء كافة إعدادات الـ HTTP والبورتات لتعمل الماكينة كخادم معالجة فقط
+[[vm]]
+  cpu_kind = "performance"
+  cpus = 16
+  memory_mb = 102400  # ما يعادل 100 جيجابايت رام
