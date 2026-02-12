@@ -1,11 +1,11 @@
 app = "hasiimusicbot"
-primary_region = "ams"
+primary_region = "iad"
 
 [build]
-  builder = "paketobuildpacks/builder:base"
+  dockerfile = "Dockerfile"
 
-# تم إلغاء كافة إعدادات الـ HTTP والبورتات لتعمل الماكينة كخادم معالجة فقط
+# 🔥 مواصفات الخادم (TITANIUM SPECS) 🔥
 [[vm]]
-  cpu_kind = "performance"
-  cpus = 16
-  memory_mb = 102400  # ما يعادل 100 جيجابايت رام
+  cpu_kind = "performance"  # لازم performance عشان يقبل 16 كور
+  cpus = 16                 # 16 Cores
+  memory_mb = 92160         # 90 GB RAM (90 * 1024)
